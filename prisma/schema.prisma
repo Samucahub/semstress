@@ -1,0 +1,88 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String       @id @default(uuid())
+  name         String
+  email        String       @unique
+  password     String
+  role         UserRole     @default(USER)
+
+  internship   Internship?
+  tasks        Task[]
+  timeEntries  TimeEntry[]
+
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+model Internship {
+  id              String   @id @default(uuid())
+  company         String
+  institute       String
+  companyMentor   String?
+  instituteMentor String?
+  totalHours      Int?
+  startDate       DateTime
+  endDate         DateTime
+
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Task {
+  id          String      @id @default(uuid())
+  title       String
+  description String?
+  status      TaskStatus  @default(TODO)
+  dueDate     DateTime?
+
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+
+  timeEntries TimeEntry[]
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model TimeEntry {
+  id        String   @id @default(uuid())
+  date      DateTime
+  startTime DateTime
+  endTime   DateTime
+
+  userId    String
+  taskId    String
+
+  user      User     @relation(fields: [userId], references: [id])
+  task      Task     @relation(fields: [taskId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, date])
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
