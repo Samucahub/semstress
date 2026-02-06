@@ -1,347 +1,109 @@
-<p align="center">
-  <img src="./frontend/assets/TA.png" width="100" alt="SEMSTRESS" />
-</p>
+# SemStress
 
-<h1 align="center">SEMSTRESS</h1>
-
-<p align="center">
-  Internship management. Without the stress.
-</p>
-
-<p align="center">
-  <a href="https://github.com/Samucahub/semstress/stargazers"><img src="https://img.shields.io/github/stars/Samucahub/semstress?style=flat-square" alt="Stars" /></a>
-  <a href="https://github.com/Samucahub/semstress/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="License" /></a>
-  <a href="./README.pt.md"><img src="https://img.shields.io/badge/lang-português-green.svg?style=flat-square" alt="PT" /></a>
-</p>
+Uma aplicação para gerir tarefas de estágios. Porque toda a gente precisa de mais stress, mas de forma organizada.
 
 ---
 
-## What is this?
+## PT - Português de Portugal
 
-A web app for students who need to manage their internships but would rather be doing literally anything else. Track tasks, log hours, generate reports. The usual stuff, but with less clicking and more sanity.
+### O que é isto?
 
-Built because spreadsheets are a crime against humanity.
+SemStress é um sistema de gestão de tarefas e registos de tempo para programas de estágio. Foi criado com a firme convicção de que os estagiários trabalham melhor quando sabem exatamente quantas horas já desperdiçaram naquele dia.
 
-## Features
+### Funcionalidades
 
-**Tasks** - Kanban board with drag-and-drop. Three columns. That's it. That's the feature.
+- **Autenticação**: Já sabe, login e registo. Se conseguir lembrar-se da password.
+- **Dashboard**: Aquele sítio onde vê tudo de uma vez e sente-se produtivo por alguns segundos.
+- **Tarefas**: Cria, edita e marca como concluídas. A parte de "marca como concluída" é a favorita de toda a gente.
+- **Registos de Tempo**: Porque se não contar, não aconteceu.
+- **Relatórios**: Transformar números em mais números, mas com mais cores.
+- **Papéis de Utilizador**: Admin para quem gosta de ter control issues, e user para o resto.
 
-**Time Tracking** - Weekly calendar to log hours. Automatically calculates totals because math is hard at 2am.
+### Stack Técnico
 
-**Dashboard** - See your week at a glance. Also your day. Also your active tasks. Basically everything you're procrastinating on.
+**Backend**: NestJS com TypeScript. Porque Node.js puro seria demasiado fácil.
 
-**Reports** - Generate professional summaries for your supervisor. Makes you look productive even when you spent 3 hours debugging CSS.
+**Frontend**: Next.js com React. É o que toda a gente usa, portanto há de funcionar.
 
-**Profile** - Store company info, institute details, mentors, deadlines. The boring but necessary stuff.
+**Base de Dados**: PostgreSQL via Prisma. Gostamos de SQL, mas com menos digitação.
 
-**Auth** - JWT-based authentication. Secure enough to keep out your roommate, not the NSA.
+**Autenticação**: JWT. Tokens mágicos que expiram e vos deixam furiosos.
 
-## Tech Stack
+### Como Executar
 
-**Backend**
-- NestJS - TypeScript on the server
-- Prisma - Database ORM that doesn't make you cry
-- PostgreSQL - Because MySQL is for WordPress blogs
-- JWT - Stateless auth for stateless developers
+1. Clone o repositório (aquele comando `git clone` que nunca se lembra de cor)
+2. `npm install` na raiz e em `frontend/`
+3. Configure o ficheiro `.env` com a base de dados (copie o `.env.example`, naturalmente)
+4. Execute `npm run start:dev` na raiz para o backend
+5. Execute `npm run dev` em `frontend/` para o frontend
+6. Abra `http://localhost:3000` e procure alguma coisa que se pareça com uma interface
 
-**Frontend**
-- Next.js 16 with Turbopack - React but faster
-- React 19 - The one with all the new hooks
-- Tailwind CSS v4 - Utility classes go brrr
-- TypeScript - JavaScript with trust issues
-
-## Installation
-
-You'll need Node.js 18+, PostgreSQL 14+, and approximately 10 minutes of your life.
-
-```bash
-# Clone it
-git clone https://github.com/Samucahub/semstress.git
-cd semstress
-
-# Backend dependencies
-npm install
-
-# Frontend dependencies
-cd frontend && npm install && cd ..
-```
-
-### Environment Variables
-
-Create `.env` in the root:
-
-```env
-DATABASE_URL="postgresql://user:password@localhost:5432/semstress"
-JWT_SECRET="change-this-or-suffer-the-consequences"
-PORT=3001
-```
-
-Create `frontend/.env.local`:
-
-```env
-NEXT_PUBLIC_API_URL=http://localhost:3001
-```
-
-### Database Setup
-
-```bash
-npx prisma migrate dev
-```
-
-## Running
-
-```bash
-# Backend (port 3001)
-npm run start:dev
-
-# Frontend (port 3000) - different terminal
-cd frontend && npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000). If it doesn't work, have you tried turning it off and on again?
-
-## Project Structure
+### Estrutura do Projeto
 
 ```
 semstress/
-├── src/                 # NestJS backend
-│   ├── auth/           # Login/Register stuff
-│   ├── tasks/          # Task CRUD
-│   ├── time-entries/   # Hour logging
-│   ├── reports/        # Report generation
-│   └── internship/     # Profile management
-├── frontend/
-│   ├── app/            # Next.js pages
-│   ├── components/     # React components
-│   └── lib/            # Utils and types
-└── prisma/
-    └── schema.prisma   # Database schema
+├── src/              # Backend (NestJS)
+├── frontend/         # Frontend (Next.js)
+├── prisma/           # Schemas da base de dados
+└── test/             # E2E tests (teoricamente)
 ```
 
-## API Endpoints
+### Notas
 
-**Auth**
-- `POST /auth/register` - Create account
-- `POST /auth/login` - Get JWT token
-
-**Tasks**
-- `GET /tasks` - List all tasks
-- `POST /tasks` - Create task
-- `PATCH /tasks/:id` - Update task
-- `DELETE /tasks/:id` - Delete task (goodbye forever)
-
-**Time Entries**
-- `GET /time-entries?from=DATE&to=DATE` - List entries
-- `POST /time-entries` - Log hours
-
-**Reports**
-- `GET /reports/summary` - Weekly/daily summary
-- `GET /reports/detailed` - Full report
-
-**Profile**
-- `GET /internship/my` - Get your internship data
-- `POST /internship` - Update internship data
-
-## Contributing
-
-Found a bug? Have a feature idea? PRs welcome. Please follow the usual GitHub flow:
-
-1. Fork
-2. Branch
-3. Code
-4. Test (or don't, I'm not your supervisor)
-5. PR
-
-## License
-
-MIT - Do whatever you want. Just don't sue me if your server catches fire.
-
-## Author
-
-**samudevx**
-
-- GitHub: [@Samucahub](https://github.com/Samucahub)
-- LinkedIn: [@samudevx](https://linkedin.com/in/samudevx)
-- Twitter: [@samudevx](https://twitter.com/samudevx)
-
-## Acknowledgments
-
-Built with NestJS, Next.js, and an unhealthy amount of caffeine.
-
-Special thanks to Stack Overflow for basically writing half of this.
+- O servidor backend executa na porta 3001
+- O servidor frontend na 3000
+- Se alguma coisa não funcionar, tente apagar `node_modules` e `npm install` de novo
+- Se isso não funcionar também, feche o computador e vá fazer uma caminhada
 
 ---
 
-<p align="center">
-  Made by <a href="https://github.com/Samucahub">samudevx</a> because internship paperwork is the worst.
-</p>
+## EN - English
 
-# (Opcional) Seed da base de dados
-npx prisma db seed
-```
+### What is This?
 
-## 🏃 Como Executar
+SemStress is a task and time tracking management system for internship programs. Built on the principle that interns work better when they know exactly how many hours they've already wasted today.
 
-### Desenvolvimento
+### Features
 
-```bash
-# Terminal 1 - Backend (porta 3001)
-npm run start:dev
+- **Authentication**: You know the drill. Login and registration. If you can remember your password.
+- **Dashboard**: That place where you see everything at once and feel productive for a few seconds.
+- **Tasks**: Create, edit, and mark as done. The "mark as done" part is everyone's favorite.
+- **Time Entries**: Because if you don't track it, it didn't happen.
+- **Reports**: Turning numbers into more numbers, but with better colors.
+- **User Roles**: Admin for control enthusiasts, and user for the rest of us.
 
-# Terminal 2 - Frontend (porta 3000)
-cd frontend
-npm run dev
-```
+### Tech Stack
 
-Aceda à aplicação em [http://localhost:3000](http://localhost:3000)
+**Backend**: NestJS with TypeScript. Because vanilla Node.js would be too easy.
 
-### Produção
+**Frontend**: Next.js with React. It's what everyone uses, so it's probably fine.
 
-```bash
-# Build do backend
-npm run build
-npm run start:prod
+**Database**: PostgreSQL via Prisma. We like SQL, but with less typing.
 
-# Build do frontend
-cd frontend
-npm run build
-npm start
-```
+**Authentication**: JWT. Magic tokens that expire and make you angry.
 
-## 📁 Estrutura do Projeto
+### How to Run
+
+1. Clone the repository (that `git clone` command you never remember)
+2. `npm install` in the root and in `frontend/`
+3. Set up your `.env` file with the database (copy `.env.example`, obviously)
+4. Run `npm run start:dev` in the root for the backend
+5. Run `npm run dev` in `frontend/` for the frontend
+6. Open `http://localhost:3000` and look for something that resembles an interface
+
+### Project Structure
 
 ```
 semstress/
-├── src/                      # Backend NestJS
-│   ├── auth/                 # Módulo de autenticação
-│   ├── tasks/                # Gestão de tarefas
-│   ├── time-entries/         # Registo de horas
-│   ├── reports/              # Geração de relatórios
-│   ├── users/                # Gestão de utilizadores
-│   ├── internship/           # Perfil de estágio
-│   └── common/               # Guards, decorators, Prisma
-├── frontend/
-│   ├── app/                  # Next.js App Router
-│   │   ├── dashboard/        # Dashboard principal
-│   │   ├── tasks/            # Vista Kanban
-│   │   ├── time-entries/     # Calendário semanal
-│   │   ├── reports/          # Relatórios
-│   │   ├── profile/          # Perfil de estágio
-│   │   ├── login/            # Autenticação
-│   │   └── register/         # Registo
-│   ├── components/           # Componentes reutilizáveis
-│   └── lib/                  # Utils e tipos
-└── prisma/
-    └── schema.prisma         # Schema da base de dados
+├── src/              # Backend (NestJS)
+├── frontend/         # Frontend (Next.js)
+├── prisma/           # Database schemas
+└── test/             # E2E tests (theoretically)
 ```
 
-## 🔌 API Endpoints
+### Notes
 
-### Autenticação
-- `POST /auth/register` - Criar nova conta
-- `POST /auth/login` - Login (retorna JWT token)
-
-### Tarefas
-- `GET /tasks` - Listar tarefas
-- `POST /tasks` - Criar tarefa
-- `PATCH /tasks/:id` - Atualizar tarefa
-- `DELETE /tasks/:id` - Eliminar tarefa
-
-### Registo de Horas
-- `GET /time-entries?from=YYYY-MM-DD&to=YYYY-MM-DD` - Listar registos
-- `POST /time-entries` - Criar registo
-
-### Relatórios
-- `GET /reports/summary` - Resumo semanal/diário
-- `GET /reports/detailed` - Relatório detalhado
-
-### Perfil
-- `GET /internship/my` - Obter perfil de estágio
-- `POST /internship` - Criar/atualizar perfil
-
-## 🎨 Screenshots
-
-_Em breve - adicionar screenshots da aplicação_
-
-## 🤝 Contribuições
-
-Contribuições são muito bem-vindas! Por favor:
-
-1. Fork o projeto
-2. Crie uma branch para a sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit as suas alterações (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
-
-## 📄 Licença
-
-Este projeto está sob a licença MIT. Consulte o ficheiro [LICENSE](LICENSE) para mais detalhes.
-
-## 👨‍💻 Autor
-
-**samudevx**
-
-- GitHub: [@Samucahub](https://github.com/Samucahub)
-- LinkedIn: [@samudevx](https://linkedin.com/in/samudevx)
-- Twitter: [@samudevx](https://twitter.com/samudevx)
-
-## 🙏 Agradecimentos
-
-- [NestJS](https://nestjs.com/) - Framework backend incrível
-- [Next.js](https://nextjs.org/) - React framework poderoso
-- [Prisma](https://www.prisma.io/) - ORM moderno e type-safe
-- Comunidade open source 💙
-
----
-
-<p align="center">
-  Feito com ❤️ por <a href="https://github.com/Samucahub">samudevx</a>
-</p>
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+- Backend server runs on port 3001
+- Frontend server on 3000
+- If something doesn't work, try deleting `node_modules` and running `npm install` again
+- If that doesn't work either, close the laptop and go for a walk
