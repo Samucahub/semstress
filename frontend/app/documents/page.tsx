@@ -7,6 +7,7 @@ import { Document } from '@/lib/types';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import InternshipCheck from '@/components/InternshipCheck';
 import { getCurrentUserId } from '@/lib/auth';
 import { 
   FileText, 
@@ -63,20 +64,23 @@ function DocumentsPage() {
   if (loading) {
     return (
       <ProtectedRoute>
-        <div className="flex">
-          <Sidebar />
-          <div className="flex-1 ml-20">
-            <div className="flex items-center justify-center min-h-screen">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <InternshipCheck>
+          <div className="flex">
+            <Sidebar />
+            <div className="flex-1 ml-20">
+              <div className="flex items-center justify-center min-h-screen">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              </div>
             </div>
           </div>
-        </div>
+        </InternshipCheck>
       </ProtectedRoute>
     );
   }
 
   return (
     <ProtectedRoute>
+      <InternshipCheck>
       <div className="flex">
         <Sidebar />
         <div className="flex-1 ml-20">
@@ -202,6 +206,7 @@ function DocumentsPage() {
           </div>
         </div>
       </div>
+      </InternshipCheck>
     </ProtectedRoute>
   );
 }

@@ -8,17 +8,72 @@ import { ProjectRole } from '@prisma/client';
 export class TasksService {
   constructor(private prisma: PrismaService) {}
 
+  private async getOrCreateDefaultStatusId(userId: string, projectId: string | null) {
+    const existing = await this.prisma.status.findFirst({
+      where: { userId, projectId },
+      orderBy: { order: 'asc' },
+      select: { id: true },
+    });
+
+    if (existing) {
+      return existing.id;
+    }
+
+    const defaults = [
+      { name: 'TODO', order: 0 },
+      { name: 'IN PROGRESS', order: 1 },
+      { name: 'DONE', order: 2 },
+    ];
+
+    await this.prisma.status.createMany({
+      data: defaults.map((status) => ({
+        ...status,
+        userId,
+        projectId,
+      })),
+      skipDuplicates: true,
+    });
+
+    const createdDefault = await this.prisma.status.findFirst({
+      where: { userId, projectId, name: 'TODO' },
+      select: { id: true },
+    });
+
+    if (createdDefault) {
+      return createdDefault.id;
+    }
+
+    const fallback = await this.prisma.status.findFirst({
+      where: { userId, projectId },
+      orderBy: { order: 'asc' },
+      select: { id: true },
+    });
+
+    if (!fallback) {
+      throw new BadRequestException('Não foi possível determinar um status padrão');
+    }
+
+    return fallback.id;
+  }
+
   async create(userId: string, dto: CreateTaskDto) {
     const normalizedAssignees = dto.assignedToIds ?? (dto.assignedToId ? [dto.assignedToId] : undefined);
     const { assignedToId, assignedToIds, ...rest } = dto;
+    const normalizedStatusId = rest.statusId?.trim();
+    const effectiveStatusId =
+      normalizedStatusId && normalizedStatusId.length > 0
+        ? normalizedStatusId
+        : await this.getOrCreateDefaultStatusId(userId, rest.projectId || null);
+
     const maxOrder = await this.prisma.task.aggregate({
-      where: { userId, statusId: rest.statusId, projectId: rest.projectId || null },
+      where: { userId, statusId: effectiveStatusId, projectId: rest.projectId || null },
       _max: { order: true },
     });
 
     return this.prisma.task.create({
       data: {
         ...rest,
+        statusId: effectiveStatusId,
         userId,
         order: (maxOrder._max.order ?? -1) + 1,
         assignees: normalizedAssignees?.length
@@ -52,12 +107,12 @@ export class TasksService {
     const filters: any[] = [
       {
         userId,
-        projectId: null, // Standalone tasks (no project)
+        projectId: null,
       },
       {
         project: {
           isCollaborative: false,
-          userId, // Only tasks from simple projects the user owns
+          userId,
         },
       },
     ];
@@ -67,8 +122,8 @@ export class TasksService {
         project: {
           isCollaborative: true,
           OR: [
-            { userId }, // User owns the collaborative project
-            { members: { some: { userId } } }, // User is a member
+            { userId },
+            { members: { some: { userId } } },
           ],
         },
       });
@@ -214,14 +269,7 @@ export class TasksService {
     });
   }
 
-  /**
-   * Create a task in a collaborative project
-   */
   async createProjectTask(userId: string, projectId: string, dto: CreateTaskDto) {
-    if (!dto.statusId) {
-      throw new BadRequestException('Status é obrigatório');
-    }
-    // Check if user has access to project
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
     });
@@ -244,15 +292,20 @@ export class TasksService {
       throw new ForbiddenException('You do not have access to this project');
     }
 
-    // Check if user has edit permission
     if (!isOwner && isMember) {
       if (isMember.role === ProjectRole.VIEWER) {
         throw new ForbiddenException('You do not have permission to create tasks in this project');
       }
     }
 
+    const normalizedStatusId = dto.statusId?.trim();
+    const effectiveStatusId =
+      normalizedStatusId && normalizedStatusId.length > 0
+        ? normalizedStatusId
+        : await this.getOrCreateDefaultStatusId(project.userId, projectId);
+
     const maxOrder = await this.prisma.task.aggregate({
-      where: { projectId, statusId: dto.statusId },
+      where: { projectId, statusId: effectiveStatusId },
       _max: { order: true },
     });
 
@@ -275,6 +328,7 @@ export class TasksService {
     const { assignedToId, assignedToIds, ...rest } = dto;
     const data = {
       ...rest,
+      statusId: effectiveStatusId,
       projectId,
       userId,
       order: (maxOrder._max.order ?? -1) + 1,
@@ -310,11 +364,7 @@ export class TasksService {
     });
   }
 
-  /**
-   * Get all tasks in a project
-   */
   async getProjectTasks(userId: string, projectId: string) {
-    // Check if user has access
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
     });
@@ -369,11 +419,7 @@ export class TasksService {
     });
   }
 
-  /**
-   * Update a project task
-   */
   async updateProjectTask(userId: string, projectId: string, taskId: string, dto: UpdateTaskDto) {
-    // Check if user has edit access
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
     });
@@ -488,11 +534,7 @@ export class TasksService {
     });
   }
 
-  /**
-   * Delete a project task
-   */
   async deleteProjectTask(userId: string, projectId: string, taskId: string) {
-    // Check if user has edit access
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
     });

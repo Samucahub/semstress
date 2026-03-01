@@ -14,7 +14,7 @@ export class RegisterDto {
 
   @IsStrongPassword({
     message:
-      'A password deve ter: mínimo 12 caracteres, 1 maiúscula, 1 minúscula, 1 número e 1 carácter especial (!@#$%^&*)',
+      'A password deve ter: mínimo 8 caracteres, 1 maiúscula, 1 minúscula, 1 número e 1 carácter especial (!@#$%^&*)',
   })
   password: string;
 }

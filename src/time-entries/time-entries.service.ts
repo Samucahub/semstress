@@ -18,16 +18,19 @@ export class TimeEntriesService {
   }
 
   findByRange(userId: string, from: string, to: string) {
+    const fromDate = new Date(`${from}T00:00:00`);
+    const toDate = new Date(`${to}T23:59:59`);
+
     return this.prisma.timeEntry.findMany({
       where: {
         userId,
         date: {
-          gte: new Date(from),
-          lte: new Date(to),
+          gte: fromDate,
+          lte: toDate,
         },
       },
       include: { task: true },
-      orderBy: { date: 'asc' },
+      orderBy: { startTime: 'asc' },
     });
   }
 

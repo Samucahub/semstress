@@ -1,4 +1,5 @@
-import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -14,9 +15,19 @@ import { UsersModule } from './users/users.module';
 import { DocumentsModule } from './documents/documents.module';
 import { RateLimitMiddleware } from './common/middleware/rate-limit.middleware';
 import { AuthRateLimitMiddleware } from './common/middleware/auth-rate-limit.middleware';
+import { LoggerModule } from './common/logger/logger.module';
+import { EmailModule } from './common/email/email.module';
+import { MonitoringController } from './common/monitoring/monitoring.controller';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath:
+        process.env.NODE_ENV === 'production'
+          ? ['.env.production', '.env']
+          : ['.env'],
+    }),
     AuthModule,
     PrismaModule,
     ReportsModule,
@@ -28,16 +39,27 @@ import { AuthRateLimitMiddleware } from './common/middleware/auth-rate-limit.mid
     StatusesModule,
     UsersModule,
     DocumentsModule,
+    LoggerModule,
+    EmailModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, MonitoringController],
   providers: [AppService],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    // Aplicar rate limit específico de auth
-    consumer.apply(AuthRateLimitMiddleware).forRoutes('auth');
+    // Rate limit específico para auth (mais restritivo)
+    consumer
+      .apply(AuthRateLimitMiddleware)
+      .forRoutes(
+        { path: 'auth/login', method: RequestMethod.POST },
+        { path: 'auth/register', method: RequestMethod.POST },
+        { path: 'auth/verify-email', method: RequestMethod.POST },
+        { path: 'auth/resend-code', method: RequestMethod.POST },
+      );
 
-    // Aplicar rate limit global a todos os endpoints
-    consumer.apply(RateLimitMiddleware.globalLimiter).forRoutes('*');
+    // Rate limit global (500 req / 15 min por IP)
+    consumer
+      .apply(RateLimitMiddleware.globalLimiter)
+      .forRoutes('*');
   }
 }

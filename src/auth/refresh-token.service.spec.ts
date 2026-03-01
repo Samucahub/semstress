@@ -40,7 +40,11 @@ describe('RefreshTokenService', () => {
         {
           provide: ConfigService,
           useValue: {
-            get: jest.fn(),
+            get: jest.fn((key: string, defaultValue?: any) => {
+              if (key === 'REFRESH_TOKEN_SECRET') return 'test-refresh-secret';
+              if (key === 'REFRESH_TOKEN_EXPIRY_DAYS') return 30;
+              return defaultValue;
+            }),
           },
         },
       ],

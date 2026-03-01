@@ -7,6 +7,7 @@ import Button from '@/components/ui/Button';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import InternshipCheck from '@/components/InternshipCheck';
 import { apiFetch } from '@/lib/api';
+import { useOnceEffect } from '@/lib/hooks';
 import {
   MoreHorizontal,
   MoreVertical,
@@ -62,8 +63,8 @@ type LeadershipTransfer = {
 export default function ProjectDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const projectId = params.id as string;
+  const [isClient, setIsClient] = useState(false);
 
   const [project, setProject] = useState<Project | null>(null);
   const [statuses, setStatuses] = useState<Status[]>([]);
@@ -105,14 +106,24 @@ export default function ProjectDetailsPage() {
   }, [projectId]);
 
   useEffect(() => {
-    const taskId = searchParams.get('taskId');
-    if (!taskId || tasks.length === 0) return;
-    if (detailedTaskDialog.open && detailedTaskDialog.task?.id === taskId) return;
-    const task = tasks.find((t) => t.id === taskId);
-    if (task) {
-      setDetailedTaskDialog({ open: true, task });
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isClient) return;
+    try {
+      const searchParams = useSearchParams();
+      const taskId = searchParams.get('taskId');
+      if (!taskId || tasks.length === 0) return;
+      if (detailedTaskDialog.open && detailedTaskDialog.task?.id === taskId) return;
+      const task = tasks.find((t) => t.id === taskId);
+      if (task) {
+        setDetailedTaskDialog({ open: true, task });
+      }
+    } catch (err) {
+      // useSearchParams called outside of 'use client' or in SSR context, ignore
     }
-  }, [searchParams, tasks, detailedTaskDialog.open, detailedTaskDialog.task?.id]);
+  }, [tasks, detailedTaskDialog.open, detailedTaskDialog.task?.id, isClient]);
 
   async function loadData() {
     try {

@@ -30,9 +30,6 @@ export class TasksController {
     return this.service.update(user.id, id, dto);
   }
 
-  /**
-   * Project-specific task endpoints
-   */
 
   @Post('projects/:projectId')
   createProjectTask(@CurrentUser() user, @Param('projectId') projectId: string, @Body() dto: CreateTaskDto) {

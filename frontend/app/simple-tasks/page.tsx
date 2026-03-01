@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
@@ -8,6 +8,7 @@ import Button from '@/components/ui/Button';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import InternshipCheck from '@/components/InternshipCheck';
 import { apiFetch } from '@/lib/api';
+import { useOnceEffect } from '@/lib/hooks';
 import {
   ChevronDown,
   ChevronRight,
@@ -40,10 +41,10 @@ type Task = {
 };
 
 export default function SimpleTasksPage() {
-  const searchParams = useSearchParams();
   const [statuses, setStatuses] = useState<Status[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [error, setError] = useState('');
+  const [isClient, setIsClient] = useState(false);
 
   const [taskDialog, setTaskDialog] = useState<{
     open: boolean;
@@ -60,20 +61,31 @@ export default function SimpleTasksPage() {
   const [draggedStatusId, setDraggedStatusId] = useState<string | null>(null);
   const [dragOverColumnId, setDragOverColumnId] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  // Mark component as client-side mounted
+  useOnceEffect(() => {
+    setIsClient(true);
+  });
 
-  // Auto-open task dialog from URL param
+  useOnceEffect(() => {
+    loadData();
+  });
+
+  // Auto-open task dialog from URL param (only on client)
   useEffect(() => {
-    const taskId = searchParams.get('taskId');
-    if (taskId && tasks.length > 0) {
-      const task = tasks.find((t) => t.id === taskId);
-      if (task) {
-        setTaskDialog({ open: true, mode: 'edit', task });
+    if (!isClient) return;
+    try {
+      const searchParams = useSearchParams();
+      const taskId = searchParams.get('taskId');
+      if (taskId && tasks.length > 0) {
+        const task = tasks.find((t) => t.id === taskId);
+        if (task) {
+          setTaskDialog({ open: true, mode: 'edit', task });
+        }
       }
+    } catch (err) {
+      // useSearchParams called outside of 'use client' or in SSR context, ignore
     }
-  }, [searchParams, tasks]);
+  }, [tasks, isClient]);
 
   async function loadData() {
     try {

@@ -45,10 +45,6 @@ export class ProjectsController {
     return this.service.delete(user.id, id);
   }
 
-  /**
-   * Collaborative Projects Endpoints
-   */
-
   @Post('collaborative/create')
   createCollaborative(@CurrentUser() user, @Body() dto: CreateCollaborativeProjectDto) {
     return this.service.createCollaborativeProject(user.id, dto);
@@ -73,10 +69,6 @@ export class ProjectsController {
   deleteCollaborative(@CurrentUser() user, @Param('id') id: string) {
     return this.service.deleteCollaborativeProject(user.id, id);
   }
-
-  /**
-   * Members Endpoints
-   */
 
   @Get(':projectId/members')
   getMembers(@CurrentUser() user, @Param('projectId') projectId: string) {

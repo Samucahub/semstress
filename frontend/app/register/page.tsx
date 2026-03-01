@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
@@ -14,9 +14,16 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [requiresVerification, setRequiresVerification] = useState(false);
   const [verificationCode, setVerificationCode] = useState('');
+  const submitInProgressRef = useRef(false);
 
   async function submit(e?: React.FormEvent) {
     e?.preventDefault();
+    
+    // Previne múltiplas chamadas simultâneas
+    if (submitInProgressRef.current) {
+      return;
+    }
+    
     if (!username || !email || !password) {
       setError('Por favor, preenche todos os campos');
       return;
@@ -28,6 +35,7 @@ export default function RegisterPage() {
     }
 
     try {
+      submitInProgressRef.current = true;
       setError('');
       setLoading(true);
       const res = await apiFetch('/auth/register', {
@@ -51,17 +59,26 @@ export default function RegisterPage() {
         setError(message);
       }
       setLoading(false);
+    } finally {
+      submitInProgressRef.current = false;
     }
   }
 
   async function handleVerifyEmail(e?: React.FormEvent) {
     e?.preventDefault();
+    
+    // Previne múltiplas chamadas simultâneas
+    if (submitInProgressRef.current) {
+      return;
+    }
+    
     if (!verificationCode) {
       setError('Por favor, insere o código de verificação');
       return;
     }
 
     try {
+      submitInProgressRef.current = true;
       setError('');
       setLoading(true);
       await apiFetch('/auth/verify-email', {
@@ -73,32 +90,41 @@ export default function RegisterPage() {
     } catch (err: any) {
       setError(err.message || 'Código inválido');
       setLoading(false);
+    } finally {
+      submitInProgressRef.current = false;
     }
   }
 
   async function handleResendCode() {
+    // Previne múltiplas chamadas simultâneas
+    if (submitInProgressRef.current) {
+      return;
+    }
+    
     try {
+      submitInProgressRef.current = true;
       setError('');
       setLoading(true);
       await apiFetch('/auth/resend-code', {
         method: 'POST',
         body: JSON.stringify({ email }),
       });
-      setError('');
       setLoading(false);
       alert('Novo código enviado para o teu email');
     } catch (err: any) {
       setError(err.message || 'Erro ao reenviar código');
       setLoading(false);
+    } finally {
+      submitInProgressRef.current = false;
     }
   }
 
   function handleGoogleLogin() {
-    window.location.href = 'http://localhost:3000/api/auth/google';
+    window.location.href = '/api/auth/google';
   }
 
   function handleGithubLogin() {
-    window.location.href = 'http://localhost:3000/api/auth/github';
+    window.location.href = '/api/auth/github';
   }
 
   return (
@@ -106,7 +132,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-md">
         {/* LOGO / BRAND */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">SEMSTRESS</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">CROMOMETRO</h1>
           <p className="text-gray-500 text-sm">Gestão de Estágios</p>
         </div>
 
@@ -114,7 +140,7 @@ export default function RegisterPage() {
         <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
           <div className="mb-6">
             <h2 className="text-2xl font-semibold text-gray-900">Criar conta</h2>
-            <p className="text-gray-500 text-sm mt-1">Começa a usar o SEMSTRESS</p>
+            <p className="text-gray-500 text-sm mt-1">Começa a usar o CROMOMETRO</p>
           </div>
 
           {error && (
@@ -303,7 +329,7 @@ export default function RegisterPage() {
 
         {/* FOOTER */}
         <p className="text-center text-xs text-gray-500 mt-8">
-          © 2026 SEMSTRESS. Gestão de estágios simplificada.
+          © 2026 CROMOMETRO. Gestão de estágios simplificada.
         </p>
       </div>
     </div>

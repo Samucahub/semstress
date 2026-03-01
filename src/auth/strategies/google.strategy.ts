@@ -9,12 +9,13 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     const clientID = configService.get('GOOGLE_CLIENT_ID', '');
     const clientSecret = configService.get('GOOGLE_CLIENT_SECRET', '');
 
-    // Always call super() with credentials (use dummy if not provided)
     super({
       clientID: clientID || 'dummy-id',
       clientSecret: clientSecret || 'dummy-secret',
       callbackURL: configService.get('GOOGLE_CALLBACK_URL', 'http://localhost:3000/api/auth/google/callback'),
-      scope: ['email', 'profile'],
+      scope: ['https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile'],
+      accessType: 'offline',
+      prompt: 'consent',
     });
   }
 

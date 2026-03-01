@@ -13,7 +13,7 @@ export default function Navbar() {
 
   return (
     <nav className="flex justify-between items-center p-4 border-b">
-      <span className="font-bold">SEMSTRESS</span>
+      <span className="font-bold">CROMOMETRO</span>
 
       <div className="flex gap-4">
         <Link href="/dashboard">Dashboard</Link>
@@ -21,7 +21,7 @@ export default function Navbar() {
         <Link href="/time-entries">Horas</Link>
         <Link href="/reports">Relatórios</Link>
         <Link href="/profile">Perfil</Link>
-        {role === 'ADMIN' && <Link href="/admin">Admin</Link>}
+        {role === 'ADMIN' && <Link href="/cromomaximo">Admin</Link>}
         <button onClick={logout} className="text-red-500">
           Sair
         </button>

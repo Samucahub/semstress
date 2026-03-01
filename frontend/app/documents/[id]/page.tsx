@@ -7,6 +7,7 @@ import { Document } from '@/lib/types';
 import { MarkdownViewer } from '@/components/MarkdownViewer';
 import Sidebar from '@/components/Sidebar';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import InternshipCheck from '@/components/InternshipCheck';
 import Link from 'next/link';
 import { getCurrentUserId } from '@/lib/auth';
 import { 
@@ -69,7 +70,7 @@ export default function DocumentViewPage() {
 
   if (loading) {
     return (
-      <ProtectedRoute>
+      <ProtectedRoute><InternshipCheck>
         <div className="flex">
           <Sidebar />
           <div className="flex-1 ml-20">
@@ -78,13 +79,13 @@ export default function DocumentViewPage() {
             </div>
           </div>
         </div>
-      </ProtectedRoute>
+      </InternshipCheck></ProtectedRoute>
     );
   }
 
   if (error || !document) {
     return (
-      <ProtectedRoute>
+      <ProtectedRoute><InternshipCheck>
         <div className="flex">
           <Sidebar />
           <div className="flex-1 ml-20">
@@ -102,12 +103,12 @@ export default function DocumentViewPage() {
             </div>
           </div>
         </div>
-      </ProtectedRoute>
+      </InternshipCheck></ProtectedRoute>
     );
   }
 
   return (
-    <ProtectedRoute>
+    <ProtectedRoute><InternshipCheck>
       <div className="flex">
         <Sidebar />
         <div className="flex-1 ml-20">
@@ -222,6 +223,6 @@ export default function DocumentViewPage() {
           </div>
         </div>
       </div>
-    </ProtectedRoute>
+    </InternshipCheck></ProtectedRoute>
   );
 }

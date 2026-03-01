@@ -6,24 +6,22 @@ export class AuthRateLimitMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
     const path = req.path;
 
-    // Aplicar limiters específicos aos endpoints de auth
-    if (path === '/auth/register') {
+    if (path.includes('/register') && req.method === 'POST') {
       return RateLimitMiddleware.registerLimiter(req, res, next);
     }
-    if (path === '/auth/login') {
+    if (path.includes('/login') && req.method === 'POST') {
       return RateLimitMiddleware.loginLimiter(req, res, next);
     }
-    if (path === '/auth/verify-email') {
+    if (path.includes('/verify-email')) {
       return RateLimitMiddleware.verifyEmailLimiter(req, res, next);
     }
-    if (path === '/auth/resend-code') {
+    if (path.includes('/resend-code')) {
       return RateLimitMiddleware.resendCodeLimiter(req, res, next);
     }
-    if (path === '/auth/google' || path === '/auth/github') {
+    if (path.includes('/google') || path.includes('/github')) {
       return RateLimitMiddleware.oauthLimiter(req, res, next);
     }
 
-    // Para outros endpoints, continuar
     next();
   }
 }

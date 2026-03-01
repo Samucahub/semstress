@@ -10,7 +10,6 @@ export class DocumentsService {
   async create(userId: string, createDocumentDto: CreateDocumentDto) {
     const { projectId, taskId, ...data } = createDocumentDto;
 
-    // Validate that the user has access to the project or task if specified
     if (projectId) {
       const project = await this.prisma.project.findFirst({
         where: {
@@ -45,7 +44,6 @@ export class DocumentsService {
       }
     }
 
-    // Ensure document is only linked to one thing
     if (projectId && taskId) {
       throw new BadRequestException('Document can only be linked to either a project or a task, not both');
     }
@@ -90,7 +88,6 @@ export class DocumentsService {
 
   async findAll(userId: string, filters?: { projectId?: string; taskId?: string }) {
     const where: any = {
-      // Only show documents created by the current user
       authorId: userId
     };
 
@@ -176,7 +173,6 @@ export class DocumentsService {
       throw new NotFoundException('Document not found');
     }
 
-    // Check access permissions
     const hasAccess = await this.checkAccess(document, userId);
     if (!hasAccess) {
       throw new ForbiddenException('You do not have access to this document');
@@ -194,16 +190,13 @@ export class DocumentsService {
       throw new NotFoundException('Document not found');
     }
 
-    // Only the author can update the document
     if (document.authorId !== userId) {
       throw new ForbiddenException('Only the document author can update it');
     }
 
-    // Extract projectId and taskId if they exist
     const projectId = 'projectId' in updateDocumentDto ? updateDocumentDto.projectId : undefined;
     const taskId = 'taskId' in updateDocumentDto ? updateDocumentDto.taskId : undefined;
 
-    // Validate new associations if provided
     if (projectId !== undefined) {
       if (projectId) {
         const project = await this.prisma.project.findFirst({
@@ -242,7 +235,6 @@ export class DocumentsService {
       }
     }
 
-    // Build update data
     const updateData: any = { ...updateDocumentDto };
     if (projectId !== undefined) {
       updateData.projectId = projectId;
@@ -294,7 +286,6 @@ export class DocumentsService {
       throw new NotFoundException('Document not found');
     }
 
-    // Only the author can delete the document
     if (document.authorId !== userId) {
       throw new ForbiddenException('Only the document author can delete it');
     }
@@ -307,17 +298,14 @@ export class DocumentsService {
   }
 
   private async checkAccess(document: any, userId: string): Promise<boolean> {
-    // Author always has access
     if (document.authorId === userId) {
       return true;
     }
 
-    // If document is not public, only author can access
     if (!document.isPublic) {
       return false;
     }
 
-    // Check project access
     if (document.projectId) {
       const project = await this.prisma.project.findFirst({
         where: {
@@ -332,7 +320,6 @@ export class DocumentsService {
       return !!project;
     }
 
-    // Check task access
     if (document.taskId) {
       const task = await this.prisma.task.findFirst({
         where: {
@@ -349,7 +336,6 @@ export class DocumentsService {
       return !!task;
     }
 
-    // Standalone documents: only author can access (even if public)
     return false;
   }
 }

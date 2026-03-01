@@ -13,7 +13,7 @@ export class CreateDocumentDto {
 
   @IsOptional()
   @IsUUID()
-  @ValidateIf((o) => !o.taskId) // Must have either projectId or taskId or neither
+  @ValidateIf((o) => !o.taskId)
   projectId?: string;
 
   @IsOptional()

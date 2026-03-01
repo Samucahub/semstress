@@ -8,6 +8,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import InternshipCheck from '@/components/InternshipCheck';
 import TaskDialog from '@/components/TaskDialog';
 import { apiFetch } from '@/lib/api';
+import { useOnceEffect } from '@/lib/hooks';
 import {
   ChevronDown,
   ChevronRight,
@@ -71,12 +72,12 @@ const getColorClass = (color: string) => {
 };
 
 export default function TasksPage() {
-  const searchParams = useSearchParams();
   const [statuses, setStatuses] = useState<Status[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
   const [error, setError] = useState('');
+  const [isClient, setIsClient] = useState(false);
 
   // Dialogs
   const [taskDialog, setTaskDialog] = useState<{
@@ -102,16 +103,26 @@ export default function TasksPage() {
   } | null>(null);
   const [dragOverStatus, setDragOverStatus] = useState<string | null>(null);
 
-  useEffect(() => {
+  useOnceEffect(() => {
+    setIsClient(true);
+  });
+
+  useOnceEffect(() => {
     loadData();
-  }, []);
+  });
 
   useEffect(() => {
-    const taskId = searchParams.get('taskId');
-    if (taskId) {
-      loadTaskWithDocuments(taskId);
+    if (!isClient) return;
+    try {
+      const searchParams = useSearchParams();
+      const taskId = searchParams.get('taskId');
+      if (taskId) {
+        loadTaskWithDocuments(taskId);
+      }
+    } catch (err) {
+      // useSearchParams called outside of 'use client' or in SSR context, ignore
     }
-  }, [searchParams]);
+  }, [isClient]);
 
   async function loadData() {
     try {

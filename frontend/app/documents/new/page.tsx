@@ -7,6 +7,7 @@ import { CreateDocumentDto } from '@/lib/types';
 import { MarkdownEditor } from '@/components/MarkdownEditor';
 import Sidebar from '@/components/Sidebar';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import InternshipCheck from '@/components/InternshipCheck';
 import { Save, X } from 'lucide-react';
 
 function NewDocumentContent() {
@@ -105,6 +106,7 @@ function NewDocumentContent() {
 
   return (
     <ProtectedRoute>
+      <InternshipCheck>
       <div className="flex">
         <Sidebar />
         <div className="flex-1 ml-20">
@@ -322,6 +324,7 @@ function NewDocumentContent() {
           </div>
         </div>
       </div>
+      </InternshipCheck>
     </ProtectedRoute>
   );
 }

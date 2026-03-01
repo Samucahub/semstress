@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString, IsArray, MaxLength, IsEmail, ArrayNotEmpty } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsArray, MaxLength, IsEmail } from 'class-validator';
 
 export class CreateCollaborativeProjectDto {
   @IsNotEmpty()
@@ -17,7 +17,6 @@ export class CreateCollaborativeProjectDto {
 
   @IsOptional()
   @IsArray()
-  @ArrayNotEmpty()
   @IsEmail({}, { each: true, message: 'Each memberEmail must be a valid email address' })
   memberEmails?: string[];
 }

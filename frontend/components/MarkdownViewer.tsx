@@ -40,7 +40,6 @@ export function MarkdownViewer({ content, className = '' }: MarkdownViewerProps)
             const match = /language-(\w+)/.exec(className || '');
             const codeContent = String(children).replace(/\n$/, '');
             
-            // Se for uma única linha curta, renderizar como inline mesmo que tenha className
             const isShortLine = codeContent.length < 100 && !codeContent.includes('\n');
 
             if (inline || isShortLine) {
@@ -123,7 +122,7 @@ export function MarkdownViewer({ content, className = '' }: MarkdownViewerProps)
             <td className="px-4 py-2 text-gray-700 border-r border-gray-200 last:border-r-0" {...props} />
           ),
 
-          // Checkbox lists (task lists)
+          // Checkbox lists
           input: ({ node, type, checked, ...props }: any) => {
             if (type === 'checkbox') {
               return (

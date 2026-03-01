@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmação de Mudança de Email - {{appName}}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 40px 20px;
+        }
+        .greeting {
+            margin-bottom: 24px;
+            font-size: 16px;
+            color: #333;
+        }
+        .greeting strong {
+            color: #667eea;
+        }
+        .info-box {
+            background-color: #f0f7ff;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 24px 0;
+            border-radius: 4px;
+        }
+        .info-box p {
+            color: #333;
+            font-size: 14px;
+            margin: 8px 0;
+        }
+        .email-section {
+            background-color: #f9f7ff;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 24px 0;
+        }
+        .email-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e0d7ff;
+        }
+        .email-row:last-child {
+            border-bottom: none;
+        }
+        .email-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #667eea;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .email-value {
+            font-size: 16px;
+            color: #333;
+            font-weight: 500;
+            word-break: break-all;
+        }
+        .arrow {
+            color: #667eea;
+            font-weight: bold;
+            margin: 0 12px;
+        }
+        .cta-section {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 40px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 16px;
+            margin: 12px 0;
+            transition: transform 0.2s;
+        }
+        .button:hover {
+            transform: translateY(-2px);
+        }
+        .button-secondary {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        .manual-link {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 16px;
+            border-radius: 6px;
+            margin: 16px 0;
+            word-break: break-all;
+            font-size: 12px;
+            color: #666;
+        }
+        .manual-link-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #999;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+        .warning-section {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 16px;
+            margin: 24px 0;
+            border-radius: 4px;
+        }
+        .warning-title {
+            font-weight: 600;
+            color: #856404;
+            margin-bottom: 8px;
+        }
+        .warning-section p {
+            color: #856404;
+            font-size: 13px;
+            margin: 6px 0;
+        }
+        .timeline {
+            margin: 24px 0;
+        }
+        .timeline-item {
+            display: flex;
+            margin-bottom: 16px;
+        }
+        .timeline-icon {
+            width: 32px;
+            height: 32px;
+            background-color: #e8dff7;
+            border: 2px solid #667eea;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #667eea;
+            font-weight: bold;
+            font-size: 14px;
+            flex-shrink: 0;
+            margin-right: 16px;
+        }
+        .timeline-content {
+            flex: 1;
+        }
+        .timeline-content p {
+            color: #666;
+            font-size: 14px;
+            margin: 0;
+        }
+        .timeline-content strong {
+            color: #333;
+        }
+        .footer {
+            background-color: #f9f9f9;
+            padding: 24px;
+            text-align: center;
+            border-top: 1px solid #eee;
+        }
+        .footer-links {
+            margin: 12px 0;
+            font-size: 12px;
+        }
+        .footer-links a {
+            color: #667eea;
+            text-decoration: none;
+            margin: 0 12px;
+        }
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+        .footer-text {
+            font-size: 12px;
+            color: #999;
+            margin-top: 12px;
+        }
+        .year {
+            color: #999;
+        }
+        @media (max-width: 600px) {
+            .content {
+                padding: 24px 16px;
+            }
+            .header {
+                padding: 30px 16px;
+            }
+            .button {
+                display: block;
+                width: 100%;
+            }
+            .email-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .arrow {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Confirmação de Mudança de Email</h1>
+            <p>Ação Requerida</p>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <div class="greeting">
+                Olá <strong>{{name}}</strong>,
+            </div>
+
+            <p style="color: #666; margin-bottom: 12px;">
+                Detectámos uma tentativa de mudança de email na tua conta {{appName}}. Para proteger a tua segurança, necessitamos que confirmes esta mudança.
+            </p>
+
+            <!-- Email Change Info -->
+            <div class="email-section">
+                <div style="text-align: center; margin-bottom: 16px; font-size: 14px; color: #667eea; font-weight: 600;">
+                    Mudança de Email Requerida
+                </div>
+                <div class="email-row">
+                    <div style="text-align: center; flex: 1;">
+                        <div class="email-label">Email Atual</div>
+                        <div class="email-value">{{email}}</div>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div style="text-align: center; flex: 1;">
+                        <div class="email-label">Novo Email</div>
+                        <div class="email-value">{{newEmail}}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Box -->
+            <div class="info-box">
+                <p><strong>⏰ O que fazer?</strong></p>
+                <p>Clica no botão abaixo para confirmar a mudança de email. Esta ligação expira em 24 horas.</p>
+            </div>
+
+            <!-- CTA Button -->
+            <div class="cta-section">
+                <a href="{{confirmationUrl}}" class="button">Confirmar Mudança de Email</a>
+                <div class="manual-link">
+                    <div class="manual-link-label">Ou copia e cola este link no teu navegador:</div>
+                    {{confirmationUrl}}
+                </div>
+            </div>
+
+            <!-- Timeline -->
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-icon">1</div>
+                    <div class="timeline-content">
+                        <p><strong>Confirma a Mudança</strong></p>
+                        <p style="font-size: 13px;">Clica no botão acima para confirmar a mudança</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-icon">2</div>
+                    <div class="timeline-content">
+                        <p><strong>Acesso com Novo Email</strong></p>
+                        <p style="font-size: 13px;">Usarás {{newEmail}} para fazer login</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-icon">3</div>
+                    <div class="timeline-content">
+                        <p><strong>Email Antigo Será Removido</strong></p>
+                        <p style="font-size: 13px;">Deixaremos de receber notificações em {{email}}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Warning Section -->
+            <div class="warning-section">
+                <div class="warning-title">⚠️ Não Solicitaste Esta Mudança?</div>
+                <p>Se não foi tu que solicitou esta mudança, <strong>ignora este email</strong>. A mudança só será completada se confirmada.</p>
+                <p style="margin-top: 12px;">Se acreditas que a tua conta está comprometida, <a href="{{supportUrl}}" style="color: #856404; font-weight: bold;">contacta o suporte imediatamente</a>.</p>
+            </div>
+
+            <!-- Additional Info -->
+            <div style="background-color: #f5f5f5; padding: 16px; border-radius: 6px; margin: 24px 0;">
+                <p style="color: #666; font-size: 13px; margin: 0;">
+                    <strong style="color: #333;">Detalhes da Segurança:</strong><br>
+                    Ligação válida por: 24 horas<br>
+                    Depois de confirmar, poderás usar {{newEmail}} para fazer login
+                </p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p style="color: #333; font-weight: 500; margin-bottom: 8px;">{{appName}}</p>
+            <div class="footer-links">
+                <a href="{{supportUrl}}">Suporte</a>
+                <a href="{{privacyUrl}}">Privacidade</a>
+                <a href="{{termsUrl}}">Termos</a>
+            </div>
+            <p class="footer-text">© <span class="year">{{year}}</span> {{appName}}. Todos os direitos reservados.</p>
+            <p class="footer-text">Email enviado para: {{email}}</p>
+        </div>
+    </div>
+</body>
+</html>

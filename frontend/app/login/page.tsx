@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
@@ -14,15 +14,23 @@ export default function LoginPage() {
   const [requiresVerification, setRequiresVerification] = useState(false);
   const [verificationCode, setVerificationCode] = useState('');
   const router = useRouter();
+  const loginInProgressRef = useRef(false);
 
   async function handleLogin(e?: React.FormEvent) {
     e?.preventDefault();
+    
+    // Previne múltiplas chamadas simultâneas (StrictMode/double-click)
+    if (loginInProgressRef.current) {
+      return;
+    }
+    
     if (!email || !password) {
       setError('Por favor, preenche todos os campos');
       return;
     }
 
     try {
+      loginInProgressRef.current = true;
       setError('');
       setLoading(true);
       const res = await apiFetch('/auth/login', {
@@ -43,17 +51,26 @@ export default function LoginPage() {
     } catch (err: any) {
       setError(err.message || 'Erro ao fazer login');
       setLoading(false);
+    } finally {
+      loginInProgressRef.current = false;
     }
   }
 
   async function handleVerifyEmail(e?: React.FormEvent) {
     e?.preventDefault();
+    
+    // Previne múltiplas chamadas simultâneas
+    if (loginInProgressRef.current) {
+      return;
+    }
+    
     if (!verificationCode) {
       setError('Por favor, insere o código de verificação');
       return;
     }
 
     try {
+      loginInProgressRef.current = true;
       setError('');
       setLoading(true);
       const res = await apiFetch('/auth/verify-email', {
@@ -69,11 +86,19 @@ export default function LoginPage() {
     } catch (err: any) {
       setError(err.message || 'Código inválido');
       setLoading(false);
+    } finally {
+      loginInProgressRef.current = false;
     }
   }
 
   async function handleResendCode() {
+    // Previne múltiplas chamadas simultâneas
+    if (loginInProgressRef.current) {
+      return;
+    }
+    
     try {
+      loginInProgressRef.current = true;
       setError('');
       setLoading(true);
       await apiFetch('/auth/resend-code', {
@@ -86,15 +111,17 @@ export default function LoginPage() {
     } catch (err: any) {
       setError(err.message || 'Erro ao reenviar código');
       setLoading(false);
+    } finally {
+      loginInProgressRef.current = false;
     }
   }
 
   function handleGoogleLogin() {
-    window.location.href = 'http://localhost:3000/api/auth/google';
+    window.location.href = '/api/auth/google';
   }
 
   function handleGithubLogin() {
-    window.location.href = 'http://localhost:3000/api/auth/github';
+    window.location.href = '/api/auth/github';
   }
 
   return (
@@ -102,7 +129,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         {/* LOGO / BRAND */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">SEMSTRESS</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">CROMOMETRO</h1>
           <p className="text-gray-500 text-sm">Gestão de Estágios</p>
         </div>
 
@@ -281,7 +308,7 @@ export default function LoginPage() {
 
         {/* FOOTER */}
         <p className="text-center text-xs text-gray-500 mt-8">
-          © 2026 SEMSTRESS. Gestão de estágios simplificada.
+          © 2026 CROMOMETRO. Gestão de estágios simplificada.
         </p>
       </div>
     </div>

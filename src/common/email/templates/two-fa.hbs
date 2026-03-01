@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Código de Autenticação - {{appName}}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 40px 20px;
+        }
+        .greeting {
+            margin-bottom: 24px;
+            font-size: 16px;
+            color: #333;
+        }
+        .greeting strong {
+            color: #667eea;
+        }
+        .code-section {
+            background-color: #f9f7ff;
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            padding: 30px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        .code-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+        }
+        .code {
+            font-size: 48px;
+            font-weight: 700;
+            color: #667eea;
+            letter-spacing: 8px;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+        }
+        .code-info {
+            font-size: 13px;
+            color: #666;
+            margin-top: 16px;
+            font-style: italic;
+        }
+        .expiry-warning {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 16px;
+            margin: 24px 0;
+            border-radius: 4px;
+        }
+        .expiry-warning strong {
+            color: #856404;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .expiry-warning p {
+            color: #856404;
+            font-size: 14px;
+            margin: 0;
+        }
+        .security-section {
+            background-color: #f0f0f0;
+            padding: 20px;
+            border-radius: 6px;
+            margin: 24px 0;
+        }
+        .security-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+        }
+        .security-icon {
+            width: 20px;
+            height: 20px;
+            background-color: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 8px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .security-list {
+            list-style: none;
+            font-size: 13px;
+            color: #666;
+        }
+        .security-list li {
+            padding: 6px 0;
+            padding-left: 24px;
+            position: relative;
+        }
+        .security-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+        .action-section {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .action-section p {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 12px;
+        }
+        .action-text {
+            font-size: 13px;
+            color: #999;
+            margin-top: 12px;
+        }
+        .footer {
+            background-color: #f9f9f9;
+            padding: 24px;
+            text-align: center;
+            border-top: 1px solid #eee;
+        }
+        .footer-links {
+            margin: 12px 0;
+            font-size: 12px;
+        }
+        .footer-links a {
+            color: #667eea;
+            text-decoration: none;
+            margin: 0 12px;
+        }
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+        .footer-text {
+            font-size: 12px;
+            color: #999;
+            margin-top: 12px;
+        }
+        .year {
+            color: #999;
+        }
+        @media (max-width: 600px) {
+            .code {
+                font-size: 36px;
+                letter-spacing: 4px;
+            }
+            .content {
+                padding: 24px 16px;
+            }
+            .header {
+                padding: 30px 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🔐 Autenticação em Dois Passos</h1>
+            <p>Código de Segurança Requerido</p>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <div class="greeting">
+                Olá <strong>{{name}}</strong>,
+            </div>
+
+            <p style="color: #666; margin-bottom: 12px;">
+                Foi solicitado um código de autenticação em dois passos para a tua conta. Usa o código abaixo para continuar:
+            </p>
+
+            <!-- Code Display -->
+            <div class="code-section">
+                <div class="code-label">Código de Autenticação</div>
+                <div class="code">{{code}}</div>
+                <div class="code-info">Válido durante {{expiryTime}} minutos</div>
+            </div>
+
+            <!-- Expiry Warning -->
+            <div class="expiry-warning">
+                <strong>⏰ Atenção</strong>
+                <p>Este código expira em {{expiryTime}} minutos. Não o compartilhes com ninguém.</p>
+            </div>
+
+            <!-- Security Tips -->
+            <div class="security-section">
+                <div class="security-title">
+                    <span class="security-icon">!</span>
+                    Dicas de Segurança
+                </div>
+                <ul class="security-list">
+                    <li>Nunca partilhes este código com ninguém</li>
+                    <li>{{appName}} nunca pedirá este código por telefone</li>
+                    <li>Não respondes a emails a pedir este código</li>
+                    <li>Verifica sempre a segurança da tua ligação</li>
+                </ul>
+            </div>
+
+            <!-- Action Section -->
+            <div class="action-section">
+                <p style="font-weight: 600; color: #333;">Não reconheces esta tentativa?</p>
+                <p style="font-size: 13px; color: #666;">Ignora este email se não solicitaste um código. A tua conta está protegida.</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p style="color: #333; font-weight: 500; margin-bottom: 8px;">{{appName}}</p>
+            <div class="footer-links">
+                <a href="{{supportUrl}}">Suporte</a>
+                <a href="{{privacyUrl}}">Privacidade</a>
+                <a href="{{termsUrl}}">Termos</a>
+            </div>
+            <p class="footer-text">© <span class="year">{{year}}</span> {{appName}}. Todos os direitos reservados.</p>
+            <p class="footer-text">Email enviado para: {{email}}</p>
+        </div>
+    </div>
+</body>
+</html>

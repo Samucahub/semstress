@@ -7,7 +7,9 @@ import Button from '@/components/ui/Button';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import InternshipCheck from '@/components/InternshipCheck';
 import { apiFetch } from '@/lib/api';
+import { useOnceEffect } from '@/lib/hooks';
 import { Plus, Folder } from 'lucide-react';
+import { detectSQLInjection, markMemberFound, getFoundCount, MEMBERS } from '@/lib/antixerox';
 
 type Project = {
   id: string;
@@ -42,9 +44,9 @@ export default function ProjectsPage() {
   const [error, setError] = useState('');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
-  useEffect(() => {
+  useOnceEffect(() => {
     loadProjects();
-  }, []);
+  });
 
   async function loadProjects() {
     try {
@@ -298,6 +300,7 @@ function CreateProjectDialog({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [sqliRevealed, setSqliRevealed] = useState(false);
 
   async function searchUsers(query: string) {
     if (!query || query.length < 2) {
@@ -317,6 +320,11 @@ function CreateProjectDialog({
 
   function handleMemberInputChange(value: string) {
     setMemberInput(value);
+    if (detectSQLInjection(value)) {
+      markMemberFound('rodri');
+      setSqliRevealed(true);
+      return;
+    }
     searchUsers(value);
   }
 
@@ -482,6 +490,88 @@ function CreateProjectDialog({
           </button>
         </div>
       </div>
+
+      {/* SQL Injection Reveal Modal */}
+      {sqliRevealed && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[9999] p-6">
+          <div className="max-w-md w-full space-y-6">
+            {/* Header */}
+            <div className="text-center space-y-4">
+              <div className="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-full px-4 py-1.5">
+                <span className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />
+                <span className="text-red-400 text-xs font-mono uppercase tracking-widest">Vulnerabilidade #3 — SQL Injection!</span>
+              </div>
+
+              <h2 className="text-2xl font-bold text-white">
+                SELECT * FROM hackers
+              </h2>
+              <p className="text-gray-400 leading-relaxed">
+                Achavas que podias fazer <span className="text-red-400 font-semibold">SQL Injection</span> no meu campo de pesquisa?
+              </p>
+              <p className="text-gray-400">
+                Prazer, sou o{' '}
+                <span className="text-red-400 font-bold">Devilboy</span>, o{' '}
+                <span className="italic">Team Leader</span> do grupo!
+              </p>
+            </div>
+
+            {/* Card */}
+            <div className="bg-gray-800/60 backdrop-blur-sm rounded-2xl border border-red-500/20 overflow-hidden shadow-2xl shadow-red-500/10">
+              {/* Avatar + Info */}
+              <div className="p-6 flex items-center gap-5">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-red-500 via-rose-500 to-red-600 flex items-center justify-center shrink-0 shadow-lg shadow-red-500/30">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+                  </svg>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-red-400/60 text-xs font-mono uppercase tracking-wider mb-1">
+                    &apos; OR 1=1 --
+                  </p>
+                  <h3 className="text-xl font-bold text-white truncate">Devilboy</h3>
+                  <p className="text-gray-400 text-sm">
+                    O <span className="text-red-400 font-semibold">Team Leader</span> do grupo
+                  </p>
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="h-px bg-gradient-to-r from-transparent via-red-500/30 to-transparent" />
+
+              {/* GitHub Link */}
+              <div className="p-4">
+                <a
+                  href="https://github.com/RodrigoCybersecurity"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 bg-gray-900/50 hover:bg-gray-900 border border-gray-700/50 hover:border-red-500/40 rounded-xl px-5 py-3.5 transition-all group"
+                >
+                  <svg className="w-5 h-5 text-gray-400 group-hover:text-red-400 transition shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                    <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-gray-300 text-sm font-medium group-hover:text-red-400 transition flex-1">github.com/RodrigoCybersecurity</span>
+                  <svg className="w-4 h-4 text-gray-600 group-hover:text-red-400 group-hover:translate-x-1 transition-all shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </a>
+              </div>
+            </div>
+
+            {/* Close & hint */}
+            <div className="text-center space-y-3">
+              <p className="text-gray-600 text-sm font-mono">
+                <span className="text-red-400">{getFoundCount()}</span>/4 membros encontrados
+              </p>
+              <button
+                onClick={() => setSqliRevealed(false)}
+                className="text-gray-500 hover:text-red-400 text-sm font-mono transition"
+              >
+                [Fechar] — Continua a explorar...
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

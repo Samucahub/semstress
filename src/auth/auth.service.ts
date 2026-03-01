@@ -6,6 +6,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { StatusesService } from '../statuses/statuses.service';
 import { EmailService } from '../common/email/email.service';
+import { CustomLoggerService } from '../common/logger/logger.service';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { ResendVerificationCodeDto } from './dto/resend-verification-code.dto';
 import { OAuthCallbackDto } from './dto/oauth-callback.dto';
@@ -19,6 +20,7 @@ export class AuthService {
     private jwtService: JwtService,
     private statusesService: StatusesService,
     private emailService: EmailService,
+    private logger: CustomLoggerService,
     private refreshTokenService: RefreshTokenService,
   ) {}
 
@@ -31,31 +33,37 @@ export class AuthService {
       throw new BadRequestException('Username é obrigatório');
     }
 
-    // Check if username already exists in User table
     const existingUserByUsername = await this.prisma.user.findUnique({
       where: { username: dto.username },
     });
 
     if (existingUserByUsername) {
+      this.logger.logSecurity('REGISTRATION_FAILED_USERNAME_EXISTS', 'duplicate_username', {
+        username: dto.username,
+      });
       throw new ConflictException('Username já está em uso');
     }
 
-    // Check if username already exists in PendingUser table
     const existingPendingByUsername = await this.prisma.pendingUser.findUnique({
       where: { username: dto.username },
     });
 
     if (existingPendingByUsername) {
+      this.logger.logSecurity('REGISTRATION_FAILED_USERNAME_EXISTS', 'duplicate_username', {
+        username: dto.username,
+      });
       throw new ConflictException('Username já está em uso');
     }
 
-    // If email is provided, check it too
     if (dto.email) {
       const existingUserByEmail = await this.prisma.user.findUnique({
         where: { email: dto.email },
       });
 
       if (existingUserByEmail) {
+        this.logger.logSecurity('REGISTRATION_FAILED_EMAIL_EXISTS', 'duplicate_email', {
+          email: dto.email,
+        });
         throw new ConflictException('Email já registado');
       }
 
@@ -73,7 +81,6 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(dto.password, 10);
     const verificationCode = this.generateVerificationCode();
 
-    // Create pending user (not in User table yet)
     await this.prisma.pendingUser.create({
       data: {
         name: dto.name || dto.username,
@@ -81,15 +88,19 @@ export class AuthService {
         email: dto.email || `${dto.username}@pending.local`,
         password: hashedPassword,
         verificationCode,
-        verificationCodeExpiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
+        verificationCodeExpiresAt: new Date(Date.now() + 15 * 60 * 1000),
       },
     });
     
-    // Send verification email (to provided email or username@pending.local)
     const emailToSend = dto.email || `${dto.username}@pending.local`;
     if (dto.email) {
-      await this.emailService.sendVerificationEmail(dto.email, verificationCode);
+      await this.emailService.sendVerificationEmail(dto.email, verificationCode, dto.name || dto.username);
     }
+
+    this.logger.logAuth('REGISTER_INITIATED', dto.email || dto.username, {
+      username: dto.username,
+      email: dto.email,
+    });
 
     return {
       message: 'Conta criada com sucesso. Verifica o teu email para completar o registo.',
@@ -106,7 +117,6 @@ export class AuthService {
 
     let user;
     
-    // Try to find user by username first, then by email
     if (dto.username) {
       user = await this.prisma.user.findUnique({
         where: { username: dto.username },
@@ -120,16 +130,22 @@ export class AuthService {
     }
 
     if (!user || !user.password) {
+      this.logger.logSecurity('LOGIN_FAILED_INVALID_CREDENTIALS', 'invalid_user', {
+        identifier: dto.username || dto.email,
+      });
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
     const passwordMatch = await bcrypt.compare(dto.password, user.password);
 
     if (!passwordMatch) {
+      this.logger.logSecurity('LOGIN_FAILED_INVALID_PASSWORD', 'invalid_password', {
+        userId: user.id,
+        email: user.email,
+      });
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
-    // If user hasn't verified email, send a new code
     if (!user.emailVerified) {
       const verificationCode = this.generateVerificationCode();
       await this.prisma.user.update({
@@ -140,7 +156,11 @@ export class AuthService {
         },
       });
 
-      await this.emailService.sendVerificationEmail(user.email, verificationCode);
+      await this.emailService.sendVerificationEmail(user.email, verificationCode, user.name);
+
+      this.logger.logAuth('LOGIN_INITIATED_AWAITING_VERIFICATION', user.email, {
+        userId: user.id,
+      });
 
       return {
         message: 'Credenciais válidas. Verifica o teu email para completar o login.',
@@ -148,6 +168,11 @@ export class AuthService {
         email: user.email,
       };
     }
+
+    this.logger.logAuth('AUTH_LOGIN_SUCCESS', user.email, {
+      userId: user.id,
+      username: user.username,
+    });
 
     return this.signToken(user.id, user.email, user.role);
   }
@@ -191,7 +216,7 @@ export class AuthService {
         role: 'ADMIN',
         verificationCode,
         verificationCodeExpiresAt: new Date(Date.now() + 15 * 60 * 1000),
-        emailVerified: true, // Auto-verify admin
+        emailVerified: true,
       },
     });
 
@@ -201,13 +226,11 @@ export class AuthService {
   }
 
   async verifyEmail(dto: VerifyEmailDto) {
-    // Check in PendingUser first
     const pendingUser = await this.prisma.pendingUser.findUnique({
       where: { email: dto.email },
     });
 
     if (pendingUser) {
-      // Verify pending user registration
       if (pendingUser.verificationCodeExpiresAt < new Date()) {
         throw new BadRequestException('Código de verificação expirado');
       }
@@ -216,7 +239,6 @@ export class AuthService {
         throw new BadRequestException('Código de verificação inválido');
       }
 
-      // Create actual user
       const user = await this.prisma.user.create({
         data: {
           name: pendingUser.name,
@@ -228,21 +250,17 @@ export class AuthService {
         },
       });
 
-      // Initialize default statuses
       await this.statusesService.initializeDefaultStatuses(user.id);
 
-      // Delete pending user
       await this.prisma.pendingUser.delete({
         where: { email: dto.email },
       });
 
-      // Send welcome email
       await this.emailService.sendWelcomeEmail(user.email, user.name);
 
       return this.signToken(user.id, user.email, user.role);
     }
 
-    // Check in User table for existing unverified users
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
@@ -272,7 +290,6 @@ export class AuthService {
       },
     });
 
-    // Send welcome email
     await this.emailService.sendWelcomeEmail(updatedUser.email, updatedUser.name);
 
     return this.signToken(updatedUser.id, updatedUser.email, updatedUser.role);
@@ -283,7 +300,6 @@ export class AuthService {
       throw new BadRequestException('Username ou email são obrigatórios');
     }
 
-    // Check in PendingUser first (by username or email)
     let pendingUser;
     if (dto.username) {
       pendingUser = await this.prisma.pendingUser.findUnique({
@@ -308,7 +324,6 @@ export class AuthService {
         },
       });
 
-      // Send to provided email or pendingUser email
       const emailToSend = dto.email || pendingUser.email;
       if (emailToSend && !emailToSend.endsWith('@pending.local')) {
         await this.emailService.sendVerificationEmail(emailToSend, verificationCode);
@@ -319,7 +334,6 @@ export class AuthService {
       };
     }
 
-    // Check in User table
     let user;
     if (dto.username) {
       user = await this.prisma.user.findUnique({
@@ -334,7 +348,6 @@ export class AuthService {
     }
 
     if (!user) {
-      // Don't reveal if user exists or not for security
       return {
         message: 'Se o utilizador existe na nossa base de dados, receberá um novo código em breve.',
       };
@@ -368,12 +381,9 @@ export class AuthService {
     });
 
     if (!user) {
-      // Create new user from OAuth
-      // Generate unique username from email (part before @) or name
       let username = dto.email.split('@')[0];
       let counter = 1;
       
-      // Check if username already exists and make it unique
       while (await this.prisma.user.findUnique({ where: { username } })) {
         username = `${dto.email.split('@')[0]}${counter}`;
         counter++;
@@ -385,7 +395,7 @@ export class AuthService {
           username,
           email: dto.email,
           ...(dto.provider === 'google' ? { googleId: dto.id } : { githubId: dto.id }),
-          emailVerified: true, // OAuth verified emails
+          emailVerified: true,
           role: 'USER',
         },
       });
@@ -393,7 +403,6 @@ export class AuthService {
       await this.statusesService.initializeDefaultStatuses(user.id);
       await this.emailService.sendWelcomeEmail(user.email, user.name);
     } else {
-      // Update existing user with OAuth ID if not already set
       if (dto.provider === 'google' && !user.googleId) {
         user = await this.prisma.user.update({
           where: { id: user.id },
@@ -412,26 +421,22 @@ export class AuthService {
 
   private async signToken(userId: string, email: string, role: string) {
     const payload = { sub: userId, email, role };
-    
-    // Gerar access token (24 horas)
+
     const access_token = this.jwtService.sign(payload);
     
-    // Gerar refresh token
     const refreshToken = await this.refreshTokenService.generateRefreshToken(userId);
 
     return {
       access_token,
       refresh_token: refreshToken.token,
       token_type: 'Bearer',
-      expires_in: 24 * 60 * 60, // 24 horas em segundos
+      expires_in: 24 * 60 * 60,
       role,
     };
   }
 
-  /**
-   * Renova access token usando um refresh token válido
-   */
   async refreshAccessToken(dto: RefreshTokenDto) {
+    // Rotação do refresh token: revoga o antigo e gera um novo
     const refreshToken = await this.refreshTokenService.validateRefreshToken(
       dto.refresh_token,
     );
@@ -442,28 +447,33 @@ export class AuthService {
 
     const user = refreshToken.user;
 
-    // Gerar novo access token mantendo o mesmo refresh token
+    // Revogar o token antigo e gerar um novo (rotação)
+    const newRefreshToken = await this.refreshTokenService.rotateRefreshToken(
+      dto.refresh_token,
+      user.id,
+    );
+
+    if (!newRefreshToken) {
+      throw new UnauthorizedException('Falha ao renovar sessão. Faz login novamente.');
+    }
+
     const payload = { sub: user.id, email: user.email, role: user.role };
     const access_token = this.jwtService.sign(payload);
 
     return {
       access_token,
-      refresh_token: dto.refresh_token,
+      refresh_token: newRefreshToken.token,
       token_type: 'Bearer',
-      expires_in: 24 * 60 * 60, // 24 horas em segundos
+      expires_in: 24 * 60 * 60,
       role: user.role,
     };
   }
 
-  /**
-   * Faz logout revogando o refresh token
-   */
   async logout(refreshToken: string) {
     if (refreshToken) {
       try {
         await this.refreshTokenService.revokeRefreshToken(refreshToken);
       } catch {
-        // Ignorar erro se token já foi revogado ou não existe
       }
     }
 
@@ -472,9 +482,6 @@ export class AuthService {
     };
   }
 
-  /**
-   * Faz logout em todos os dispositivos revogando todos os refresh tokens
-   */
   async logoutAll(userId: string) {
     await this.refreshTokenService.revokeAllUserTokens(userId);
 

@@ -84,7 +84,6 @@ describe('RateLimitMiddleware', () => {
       ];
 
       limiters.forEach((limiter) => {
-        // Verificar que é uma função válida
         expect(limiter).toBeDefined();
         expect(typeof limiter).toBe('function');
       });

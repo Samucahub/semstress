@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import InternshipCheck from '@/components/InternshipCheck';
 import { apiFetch } from '@/lib/api';
+import { useOnceEffect } from '@/lib/hooks';
 
 type Task = {
   id: string;
@@ -33,12 +33,16 @@ export default function DashboardPage() {
   const [todayHours, setTodayHours] = useState<number>(0);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [recentEntries, setRecentEntries] = useState<TimeEntry[]>([]);
+  
+  // Internship stats
+  const [internship, setInternship] = useState<any>(null);
 
-  useEffect(() => {
+  useOnceEffect(() => {
     loadSummary();
     loadTasks();
     loadRecentEntries();
-  }, []);
+    loadInternshipSummary();
+  });
 
   async function loadSummary() {
     try {
@@ -47,6 +51,16 @@ export default function DashboardPage() {
       setTodayHours(data.todayHours || 0);
     } catch (error) {
       console.error('Erro ao carregar resumo:', error);
+    }
+  }
+
+  async function loadInternshipSummary() {
+    try {
+      const data = await apiFetch('/reports/internship-summary');
+      setInternship(data);
+    } catch (error) {
+      console.error('Erro ao carregar resumo do estágio:', error);
+      setInternship(null);
     }
   }
 
@@ -102,9 +116,8 @@ export default function DashboardPage() {
 
   return (
     <ProtectedRoute>
-      <InternshipCheck>
-        <div className="app-layout">
-          <Sidebar />
+      <div className="app-layout">
+        <Sidebar />
 
           <main className="app-main">
             <div className="max-w-7xl mx-auto px-8 py-8 space-y-8">
@@ -157,6 +170,68 @@ export default function DashboardPage() {
                   <p className="text-sm text-gray-500 mt-2">Em progresso</p>
                 </div>
               </section>
+
+              {/* INTERNSHIP PROGRESS SECTION */}
+              {internship?.hasInternship && (
+                <section className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-8">
+                  <div className="space-y-6">
+                    <div>
+                      <h2 className="text-lg font-semibold text-gray-900 mb-2">Progresso do Estágio</h2>
+                      <p className="text-sm text-gray-600">Acompanha o teu progresso em relação às horas previstas</p>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="space-y-3">
+                      <div className="flex items-end justify-between">
+                        <div>
+                          <p className="text-2xl font-bold text-gray-900">{internship.hoursLogged}h</p>
+                          <p className="text-xs text-gray-600 mt-1">de {internship.totalPlanned}h previstas</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-2xl font-bold text-indigo-600">{internship.progress}%</p>
+                          <p className="text-xs text-gray-600 mt-1">Concluído</p>
+                        </div>
+                      </div>
+                      
+                      {/* Progress Bar Visual */}
+                      <div className="w-full bg-white rounded-full h-3 overflow-hidden shadow-sm">
+                        <div 
+                          className="bg-gradient-to-r from-blue-500 to-indigo-600 h-full rounded-full transition-all duration-500"
+                          style={{ width: `${Math.min(internship.progress, 100)}%` }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-3 gap-4 pt-4">
+                      <div className="bg-white rounded-lg p-4 border border-blue-100">
+                        <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Horas Restantes</p>
+                        <p className="text-2xl font-bold text-indigo-600">{internship.hoursRemaining}h</p>
+                      </div>
+                      
+                      <div className="bg-white rounded-lg p-4 border border-blue-100">
+                        <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Dias Restantes</p>
+                        <p className="text-2xl font-bold text-blue-600">{internship.daysRemaining}</p>
+                      </div>
+                      
+                      <div className="bg-white rounded-lg p-4 border border-blue-100">
+                        <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Média Diária</p>
+                        <p className="text-2xl font-bold text-purple-600">{internship.hoursPerDay}h</p>
+                      </div>
+                    </div>
+
+                    {/* Recommendation */}
+                    {internship.hoursPerDay > 0 && (
+                      <div className="bg-white rounded-lg p-4 border border-blue-200">
+                        <p className="text-xs font-semibold text-gray-700 mb-2">📊 RECOMENDAÇÃO</p>
+                        <p className="text-sm text-gray-600">
+                          Para completares o estágio a tempo, precisas registar <strong className="text-indigo-600">{internship.hoursPerDay} horas por dia</strong> nos próximos <strong>{internship.daysRemaining}</strong> dias.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </section>
+              )}
 
               {/* MAIN CONTENT GRID */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -237,7 +312,6 @@ export default function DashboardPage() {
             </div>
           </main>
         </div>
-      </InternshipCheck>
     </ProtectedRoute>
   );
 }

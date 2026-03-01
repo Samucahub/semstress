@@ -6,7 +6,6 @@ import helmet from 'helmet';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
-  // Configurar validation global
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -15,47 +14,46 @@ async function bootstrap() {
     }),
   );
   
-  // Configurar CORS com opções de segurança
-  const corsOrigins = (process.env.CORS_ORIGINS || 'http://localhost:3000').split(',');
+  const corsOrigins = (process.env.CORS_ORIGINS || 'http://localhost:3000').split(',').map(o => o.trim());
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  
   app.enableCors({
-    origin: corsOrigins.map(origin => origin.trim()),
+    origin: corsOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-    maxAge: 3600, // 1 hora
+    maxAge: 3600,
   });
   
-  // Configurar Security Headers com Helmet
+  // CSP connect-src dinâmico baseado nas variáveis de ambiente
+  const connectSources = ["'self'", frontendUrl, `http://localhost:${process.env.PORT || 3001}`];
+  corsOrigins.forEach(origin => {
+    if (!connectSources.includes(origin)) connectSources.push(origin);
+  });
+  
   app.use(helmet({
-    // Content Security Policy
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
         scriptSrc: ["'self'"],
         imgSrc: ["'self'", 'data:', 'https:'],
-        connectSrc: ["'self'", 'http://localhost:3000', 'http://localhost:3001'],
+        connectSrc: connectSources,
       },
     },
-    // HSTS - HTTP Strict Transport Security
     hsts: {
-      maxAge: 31536000, // 1 ano
+      maxAge: 31536000,
       includeSubDomains: true,
       preload: true,
     },
-    // X-Frame-Options - Protege contra clickjacking
     frameguard: {
       action: 'deny',
     },
-    // X-Content-Type-Options - Previne MIME sniffing
     noSniff: true,
-    // X-XSS-Protection - Proteção contra XSS
     xssFilter: true,
-    // Referrer-Policy
     referrerPolicy: {
       policy: 'no-referrer',
     },
-    // Permissions-Policy (Feature-Policy)
     permittedCrossDomainPolicies: false,
   }));
   

@@ -6,11 +6,7 @@ import { ProjectRole, InvitationStatus } from '@prisma/client';
 export class MembersService {
   constructor(private prisma: PrismaService) {}
 
-  /**
-   * Invite a user to a collaborative project
-   */
   async inviteMember(projectId: string, invitedByUserId: string, email: string, role: ProjectRole) {
-    // Check if user is the project owner
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
     });
@@ -19,7 +15,6 @@ export class MembersService {
       throw new ForbiddenException('Only project owner can invite members');
     }
 
-    // Check if user with that email exists
     const user = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -28,7 +23,6 @@ export class MembersService {
       throw new NotFoundException('User with that email not found');
     }
 
-    // Check if user is already a member
     const existingMember = await this.prisma.projectMember.findUnique({
       where: {
         userId_projectId: {
@@ -42,7 +36,6 @@ export class MembersService {
       throw new BadRequestException('User is already a member of this project');
     }
 
-    // Check if invitation already exists
     const existingInvitation = await this.prisma.projectInvitation.findFirst({
       where: {
         projectId,
@@ -55,7 +48,6 @@ export class MembersService {
       throw new BadRequestException('Invitation already sent to this email');
     }
 
-    // Create invitation
     return this.prisma.projectInvitation.create({
       data: {
         projectId,
@@ -71,9 +63,6 @@ export class MembersService {
     });
   }
 
-  /**
-   * Accept or decline an invitation
-   */
   async respondToInvitation(invitationId: string, userId: string, accept: boolean) {
     const invitation = await this.prisma.projectInvitation.findUnique({
       where: { id: invitationId },
@@ -96,7 +85,6 @@ export class MembersService {
     }
 
     if (accept) {
-      // Add user as project member
       await this.prisma.projectMember.create({
         data: {
           projectId: invitation.projectId,
@@ -105,7 +93,6 @@ export class MembersService {
         },
       });
 
-      // Update invitation status
       return this.prisma.projectInvitation.update({
         where: { id: invitationId },
         data: { status: InvitationStatus.ACCEPTED },
@@ -118,9 +105,6 @@ export class MembersService {
     }
   }
 
-  /**
-   * Get all pending invitations for a user
-   */
   async getPendingInvitations(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -142,11 +126,7 @@ export class MembersService {
     });
   }
 
-  /**
-   * Remove a member from a project
-   */
   async removeMember(projectId: string, userId: string, memberId: string) {
-    // Check if user is the project owner
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
     });
@@ -155,7 +135,6 @@ export class MembersService {
       throw new ForbiddenException('Only project owner can remove members');
     }
 
-    // Cannot remove project owner
     if (project.userId === memberId) {
       throw new BadRequestException('Cannot remove project owner');
     }
@@ -170,11 +149,7 @@ export class MembersService {
     });
   }
 
-  /**
-   * Update member role
-   */
   async updateMemberRole(projectId: string, userId: string, memberId: string, role: ProjectRole) {
-    // Check if user is the project owner
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
     });
@@ -183,7 +158,6 @@ export class MembersService {
       throw new ForbiddenException('Only project owner can update member roles');
     }
 
-    // Cannot change owner role
     if (project.userId === memberId) {
       throw new BadRequestException('Cannot change owner role');
     }
@@ -199,9 +173,6 @@ export class MembersService {
     });
   }
 
-  /**
-   * Get all members of a project
-   */
   async getProjectMembers(projectId: string) {
     return this.prisma.projectMember.findMany({
       where: { projectId },
@@ -217,9 +188,6 @@ export class MembersService {
     });
   }
 
-  /**
-   * Request leadership transfer to another member
-   */
   async requestLeadershipTransfer(projectId: string, userId: string, toUserId: string) {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
@@ -273,9 +241,6 @@ export class MembersService {
     });
   }
 
-  /**
-   * Accept or decline leadership transfer
-   */
   async respondToLeadershipTransfer(transferId: string, userId: string, accept: boolean) {
     const transfer = await this.prisma.projectLeadershipTransfer.findUnique({
       where: { id: transferId },
@@ -312,13 +277,11 @@ export class MembersService {
         throw new NotFoundException('Project not found');
       }
 
-      // Update project owner
       await tx.project.update({
         where: { id: transfer.projectId },
         data: { userId: userId },
       });
 
-      // Update member roles
       await tx.projectMember.update({
         where: {
           userId_projectId: {
@@ -349,9 +312,6 @@ export class MembersService {
     });
   }
 
-  /**
-   * Get pending leadership transfers for a user
-   */
   async getPendingLeadershipTransfers(userId: string) {
     return this.prisma.projectLeadershipTransfer.findMany({
       where: {

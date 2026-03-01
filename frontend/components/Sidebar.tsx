@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { getRole, logout } from '@/lib/auth';
 import {
@@ -17,12 +18,12 @@ import {
 } from 'lucide-react';
 
 export default function Sidebar() {
-  const [role, setRole] = useState<string | null>(null);
+  const [role, setRoleState] = useState<string | null>(null);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const pathname = usePathname();
 
   useEffect(() => {
-    setRole(getRole());
+    setRoleState(getRole());
   }, []);
 
   const links = [
@@ -36,20 +37,26 @@ export default function Sidebar() {
   ];
 
   if (role === 'ADMIN') {
-    links.push({ href: '/admin', label: 'Admin', icon: Shield });
+    links.push({ href: '/cromomaximo', label: 'Admin', icon: Shield });
   }
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-20 bg-white border-r border-gray-200 flex flex-col items-center py-6">
       {/* Logo */}
-      <div className="mb-8 relative group">
-        <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center shadow-sm group-hover:shadow-md transition-all">
-          <span className="text-gray-700 font-bold text-lg">S</span>
+      <Link href="/dashboard" className="mb-8 relative group">
+        <div className="w-12 h-12 bg-gradient-to-br from-sky-100 to-cyan-100 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all group-hover:scale-110 p-1.5">
+          <Image
+            src="/assets/cromometro.png"
+            alt="Cromómetro"
+            width={40}
+            height={40}
+            className="w-full h-full object-contain"
+          />
         </div>
-        <div className="absolute left-20 top-1/2 -translate-y-1/2 bg-gray-800 text-white px-3 py-2 rounded-lg text-sm font-semibold whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg">
-          SEMSTRESS
+        <div className="absolute left-20 top-1/2 -translate-y-1/2 bg-gradient-to-r from-sky-600 to-cyan-600 text-white px-3 py-2 rounded-lg text-sm font-semibold whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg">
+          CROMÓMETRO
         </div>
-      </div>
+      </Link>
 
       {/* Navigation */}
       <nav className="flex-1 w-full flex flex-col items-center gap-4">
@@ -69,8 +76,8 @@ export default function Sidebar() {
                   w-12 h-12 flex items-center justify-center rounded-xl transition-all duration-200
                   ${
                     isActive
-                      ? 'bg-gray-900 text-white shadow-sm'
-                      : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+                      ? 'bg-gradient-to-br from-sky-500 to-cyan-500 text-white shadow-lg shadow-sky-500/30'
+                      : 'text-gray-500 hover:text-sky-600 hover:bg-sky-50'
                   }
                 `}
               >
@@ -90,7 +97,7 @@ export default function Sidebar() {
       <div className="relative group">
         <button
           onClick={logout}
-          className="w-12 h-12 flex items-center justify-center rounded-xl text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200"
+          className="w-12 h-12 flex items-center justify-center rounded-xl text-gray-500 hover:text-red-600 hover:bg-red-50 transition-all duration-200"
         >
           <LogOut className="w-6 h-6" />
         </button>

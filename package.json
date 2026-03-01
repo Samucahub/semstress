@@ -1,5 +1,5 @@
 {
-  "name": "semstress",
+  "name": "cromometro",
   "version": "0.0.1",
   "description": "",
   "author": "",
@@ -34,14 +34,18 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
     "express-rate-limit": "^8.2.1",
+    "handlebars": "^4.7.8",
     "helmet": "^8.1.0",
+    "html-to-text": "^9.0.5",
     "nodemailer": "^8.0.1",
+    "nodemailer-html-to-text": "^3.2.0",
     "passport": "^0.7.0",
     "passport-github2": "^0.1.12",
     "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "winston": "^3.19.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",

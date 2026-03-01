@@ -22,4 +22,9 @@ export class ReportsController {
   weekly(@CurrentUser() user, @Query('from') from: string, @Query('to') to: string) {
     return this.service.weekly(user.id, from, to);
   }
+
+  @Get('internship-summary')
+  internshipSummary(@CurrentUser() user) {
+    return this.service.internshipSummary(user.id);
+  }
 }

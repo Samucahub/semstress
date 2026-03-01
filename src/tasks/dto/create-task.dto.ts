@@ -13,9 +13,9 @@ export class CreateTaskDto {
   @IsOptional()
   description?: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  statusId: string;
+  statusId?: string;
 
   @IsOptional()
   @IsString()

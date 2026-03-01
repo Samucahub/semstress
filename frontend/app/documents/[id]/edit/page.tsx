@@ -7,6 +7,7 @@ import { Document, UpdateDocumentDto } from '@/lib/types';
 import { MarkdownEditor } from '@/components/MarkdownEditor';
 import Sidebar from '@/components/Sidebar';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import InternshipCheck from '@/components/InternshipCheck';
 import { getCurrentUserId } from '@/lib/auth';
 import { Save, X } from 'lucide-react';
 
@@ -137,7 +138,7 @@ export default function EditDocumentPage() {
 
   if (loading) {
     return (
-      <ProtectedRoute>
+      <ProtectedRoute><InternshipCheck>
         <div className="flex">
           <Sidebar />
           <div className="flex-1 ml-20">
@@ -146,13 +147,13 @@ export default function EditDocumentPage() {
             </div>
           </div>
         </div>
-      </ProtectedRoute>
+      </InternshipCheck></ProtectedRoute>
     );
   }
 
   if (error && !document) {
     return (
-      <ProtectedRoute>
+      <ProtectedRoute><InternshipCheck>
         <div className="flex">
           <Sidebar />
           <div className="flex-1 ml-20">
@@ -164,12 +165,12 @@ export default function EditDocumentPage() {
             </div>
           </div>
         </div>
-      </ProtectedRoute>
+      </InternshipCheck></ProtectedRoute>
     );
   }
 
   return (
-    <ProtectedRoute>
+    <ProtectedRoute><InternshipCheck>
       <div className="flex">
         <Sidebar />
         <div className="flex-1 ml-20">
@@ -387,6 +388,6 @@ export default function EditDocumentPage() {
           </div>
         </div>
       </div>
-    </ProtectedRoute>
+    </InternshipCheck></ProtectedRoute>
   );
 }

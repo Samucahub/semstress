@@ -1,8 +1,27 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from "next/link";
 import Image from "next/image";
 import TAAvatar from "@/assets/TA.png";
+import { getToken } from '@/lib/auth';
 
 export default function Home() {
+  const router = useRouter();
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    const token = getToken();
+    if (token) {
+      router.replace('/dashboard');
+    } else {
+      setChecking(false);
+    }
+  }, [router]);
+
+  if (checking) return null;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
       {/* HERO SECTION */}
@@ -12,7 +31,7 @@ export default function Home() {
           <div className="space-y-8">
             <div>
               <span className="inline-flex items-center rounded-full bg-gradient-to-r from-blue-500 to-purple-600 px-4 py-1.5 text-xs font-semibold text-white shadow-lg">
-                SEMSTRESS • Gestão de Estágios
+                CROMOMETRO • Gestão de Estágios
               </span>
             </div>
 
@@ -20,7 +39,7 @@ export default function Home() {
               <h1 className="text-5xl md:text-6xl font-bold leading-tight text-gray-900">
                 Simplifica o teu estágio,{" "}
                 <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  sem stress
+                  com cromometro
                 </span>
               </h1>
               <p className="text-lg text-gray-600 leading-relaxed">
@@ -41,6 +60,12 @@ export default function Home() {
                 className="inline-flex items-center justify-center rounded-xl border-2 border-gray-900 px-8 py-4 text-base font-semibold text-gray-900 hover:bg-gray-900 hover:text-white transition-all"
               >
                 Entrar
+              </Link>
+              <Link
+                href="/about"
+                className="inline-flex items-center justify-center rounded-xl border-2 border-gray-300 px-8 py-4 text-base font-semibold text-gray-500 hover:border-gray-900 hover:text-gray-900 transition-all"
+              >
+                Sobre Nós
               </Link>
             </div>
           </div>
@@ -100,7 +125,7 @@ export default function Home() {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500 font-medium">GitHub Repository</p>
-                    <h4 className="text-xl font-bold text-gray-900">semstress</h4>
+                    <h4 className="text-xl font-bold text-gray-900">cromometro</h4>
                   </div>
                 </div>
                 <p className="text-gray-600 mb-6">
@@ -108,7 +133,7 @@ export default function Home() {
                 </p>
                 <div className="flex gap-3">
                   <a
-                    href="https://github.com/Samucahub/semstress"
+                    href="https://github.com/Samucahub/cromometro"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gray-900 px-6 py-3 text-sm font-semibold text-white hover:bg-gray-800 transition"
@@ -119,7 +144,7 @@ export default function Home() {
                     Ver Repositório
                   </a>
                   <a
-                    href="https://github.com/Samucahub/semstress/stargazers"
+                    href="https://github.com/Samucahub/cromometro/stargazers"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center justify-center gap-2 rounded-lg border-2 border-gray-900 px-6 py-3 text-sm font-semibold text-gray-900 hover:bg-gray-900 hover:text-white transition"
@@ -218,7 +243,7 @@ export default function Home() {
           {/* COPYRIGHT */}
           <div className="mt-12 pt-8 border-t border-gray-200 text-center">
             <p className="text-sm text-gray-500">
-              © 2026 SEMSTRESS. Desenvolvido por <span className="font-semibold text-gray-900">The Architect</span>
+              © 2026 CROMOMETRO. Desenvolvido por <span className="font-semibold text-gray-900">The Architect</span>
             </p>
           </div>
         </div>

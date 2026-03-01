@@ -50,8 +50,8 @@ describe('StrongPasswordValidator', () => {
 
     it('deve rejeitar password com menos de 12 caracteres', () => {
       expect(validator.validate('Pass@123', null)).toBe(false);
-      expect(validator.validate('Pass@12345', null)).toBe(false); // 10 caracteres
-      expect(validator.validate('Pass@1234', null)).toBe(false); // 9 caracteres
+      expect(validator.validate('Pass@12345', null)).toBe(false);
+      expect(validator.validate('Pass@1234', null)).toBe(false);
     });
 
     it('deve rejeitar password sem letra maiúscula', () => {

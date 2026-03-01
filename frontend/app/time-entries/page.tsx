@@ -5,6 +5,7 @@ import Sidebar from '@/components/Sidebar';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import InternshipCheck from '@/components/InternshipCheck';
 import { apiFetch } from '@/lib/api';
+import { useOnceEffect } from '@/lib/hooks';
 import { ChevronLeft, ChevronRight, Search, Save, Trash2 } from 'lucide-react';
 
 type Task = {
@@ -192,12 +193,20 @@ export default function TimeEntriesPage() {
     return filtered;
   }, [projectTasks, searchTerm]);
 
-  useEffect(() => {
-    loadTasks();
-  }, []);
+  useOnceEffect(() => {
+    loadTasks().catch((error) => {
+      console.error('Failed to load tasks:', error);
+      // Set empty tasks instead of crashing
+      setTasks([]);
+    });
+  });
 
   useEffect(() => {
-    loadEntries(range.start, range.end);
+    loadEntries(range.start, range.end).catch((error) => {
+      console.error('Failed to load entries:', error);
+      // Set empty entries instead of crashing
+      setEntriesByDate({});
+    });
   }, [range.end, range.start]);
 
   useEffect(() => {

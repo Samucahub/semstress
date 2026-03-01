@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { StatusesService } from '../statuses/statuses.service';
 import { EmailService } from '../common/email/email.service';
+import { CustomLoggerService } from '../common/logger/logger.service';
 import { RefreshTokenService } from './refresh-token.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -21,6 +22,7 @@ describe('AuthService', () => {
   let emailService: EmailService;
   let statusesService: StatusesService;
   let refreshTokenService: RefreshTokenService;
+  let loggerService: CustomLoggerService;
 
   const mockUser = {
     id: '123',
@@ -68,6 +70,16 @@ describe('AuthService', () => {
     ),
   };
 
+  const mockLoggerService = {
+    log: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+    logAuth: jest.fn(),
+    logSecurity: jest.fn(),
+    logOperation: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -76,6 +88,7 @@ describe('AuthService', () => {
         { provide: JwtService, useValue: mockJwtService },
         { provide: EmailService, useValue: mockEmailService },
         { provide: StatusesService, useValue: mockStatusesService },
+        { provide: CustomLoggerService, useValue: mockLoggerService },
         { provide: RefreshTokenService, useValue: mockRefreshTokenService },
       ],
     }).compile();
@@ -85,6 +98,7 @@ describe('AuthService', () => {
     jwtService = module.get<JwtService>(JwtService);
     emailService = module.get<EmailService>(EmailService);
     statusesService = module.get<StatusesService>(StatusesService);
+    loggerService = module.get<CustomLoggerService>(CustomLoggerService);
     refreshTokenService = module.get<RefreshTokenService>(RefreshTokenService);
 
     jest.clearAllMocks();
@@ -114,6 +128,7 @@ describe('AuthService', () => {
       expect(mockEmailService.sendVerificationEmail).toHaveBeenCalledWith(
         dto.email,
         expect.any(String),
+        expect.any(String), // name parameter
       );
     });
 
@@ -179,6 +194,10 @@ describe('AuthService', () => {
 
       const result = await service.login(dto);
 
+      if (!('access_token' in result)) {
+        throw new Error('Esperado login autenticado com token');
+      }
+
       expect(result.access_token).toBeDefined();
       expect(result.role).toBe('USER');
     });
@@ -195,6 +214,10 @@ describe('AuthService', () => {
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
       const result = await service.login(dto);
+
+      if (!('requiresVerification' in result)) {
+        throw new Error('Esperado fluxo de verificação de email');
+      }
 
       expect(result.requiresVerification).toBe(true);
       expect(mockEmailService.sendVerificationEmail).toHaveBeenCalled();
@@ -246,10 +269,10 @@ describe('AuthService', () => {
       };
 
       const pendingUser = {
+        ...mockUser,
         id: '456',
         name: 'Test User',
         username: 'testuser',
-        ...mockUser,
         verificationCode: '123456',
         verificationCodeExpiresAt: new Date(Date.now() + 5 * 60 * 1000),
       };

@@ -9,6 +9,54 @@ import { ProjectRole } from '@prisma/client';
 export class ProjectsService {
   constructor(private prisma: PrismaService) {}
 
+  private async getOrCreateDefaultUserStatusId(userId: string) {
+    const existing = await this.prisma.status.findFirst({
+      where: { userId, projectId: null },
+      orderBy: { order: 'asc' },
+      select: { id: true },
+    });
+
+    if (existing) {
+      return existing.id;
+    }
+
+    const defaults = [
+      { name: 'TODO', order: 0 },
+      { name: 'IN PROGRESS', order: 1 },
+      { name: 'DONE', order: 2 },
+    ];
+
+    await this.prisma.status.createMany({
+      data: defaults.map((status) => ({
+        ...status,
+        userId,
+        projectId: null,
+      })),
+      skipDuplicates: true,
+    });
+
+    const createdDefault = await this.prisma.status.findFirst({
+      where: { userId, projectId: null, name: 'TODO' },
+      select: { id: true },
+    });
+
+    if (createdDefault) {
+      return createdDefault.id;
+    }
+
+    const fallback = await this.prisma.status.findFirst({
+      where: { userId, projectId: null },
+      orderBy: { order: 'asc' },
+      select: { id: true },
+    });
+
+    if (!fallback) {
+      throw new BadRequestException('Não foi possível determinar um status padrão');
+    }
+
+    return fallback.id;
+  }
+
   private async getProjectAccess(userId: string, projectId: string) {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
@@ -33,16 +81,23 @@ export class ProjectsService {
   }
 
   async create(userId: string, dto: CreateProjectDto) {
+    const normalizedStatusId = dto.statusId?.trim();
+    const effectiveStatusId =
+      normalizedStatusId && normalizedStatusId.length > 0
+        ? normalizedStatusId
+        : await this.getOrCreateDefaultUserStatusId(userId);
+
     const maxOrder = await this.prisma.project.aggregate({
-      where: { userId, statusId: dto.statusId },
+      where: { userId, statusId: effectiveStatusId },
       _max: { order: true },
     });
 
     return this.prisma.project.create({
       data: {
         ...dto,
+        statusId: effectiveStatusId,
         userId,
-        isCollaborative: false, // Explicitly mark as simple project
+        isCollaborative: false,
         order: (maxOrder._max.order ?? -1) + 1,
       },
       include: {
@@ -58,7 +113,7 @@ export class ProjectsService {
     return this.prisma.project.findMany({
       where: { 
         userId,
-        isCollaborative: false, // Only simple projects
+        isCollaborative: false,
       },
       include: {
         status: true,
@@ -134,21 +189,16 @@ export class ProjectsService {
     });
   }
 
-  /**
-   * Create a collaborative project
-   */
   async createCollaborativeProject(userId: string, dto: CreateCollaborativeProjectDto) {
-    // Create the project
     const project = await this.prisma.project.create({
       data: {
         title: dto.title,
         description: dto.description,
-        userId, // Project owner
+        userId,
         isCollaborative: true,
       },
     });
 
-    // Initialize default statuses for this collaborative project
     await this.prisma.status.createMany({
       data: [
         { name: 'To Do', order: 0, userId, projectId: project.id },
@@ -158,7 +208,6 @@ export class ProjectsService {
       skipDuplicates: true,
     });
 
-    // Add the creator as project owner
     await this.prisma.projectMember.create({
       data: {
         projectId: project.id,
@@ -167,7 +216,6 @@ export class ProjectsService {
       },
     });
 
-    // Add other members if provided
     if (dto.memberIds && dto.memberIds.length > 0) {
       for (const memberId of dto.memberIds) {
         if (memberId !== userId) {
@@ -182,7 +230,6 @@ export class ProjectsService {
       }
     }
 
-    // Send invitations if emails provided
     if (dto.memberEmails && dto.memberEmails.length > 0) {
       for (const email of dto.memberEmails) {
         const user = await this.prisma.user.findUnique({
@@ -190,7 +237,6 @@ export class ProjectsService {
         });
 
         if (user && user.id !== userId) {
-          // Check if already a member
           const existingMember = await this.prisma.projectMember.findUnique({
             where: {
               userId_projectId: {
@@ -217,11 +263,7 @@ export class ProjectsService {
     return this.getCollaborativeProjectDetail(userId, project.id);
   }
 
-  /**
-   * Get all projects accessible by a user (owns or is member of)
-   */
   async findAllAccessible(userId: string) {
-    // Get collaborative projects owned by user
     const ownedProjects = await this.prisma.project.findMany({
       where: {
         userId,
@@ -243,7 +285,6 @@ export class ProjectsService {
       },
     });
 
-    // Get collaborative projects where user is a member
     const memberProjects = await this.prisma.project.findMany({
       where: {
         isCollaborative: true,
@@ -282,9 +323,6 @@ export class ProjectsService {
     return Array.from(uniqueById.values());
   }
 
-  /**
-   * Get detailed view of a collaborative project
-   */
   async getCollaborativeProjectDetail(userId: string, projectId: string) {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
@@ -318,7 +356,6 @@ export class ProjectsService {
       throw new BadRequestException('Project not found');
     }
 
-    // Check user access
     const isOwner = project.userId === userId;
     const isMember = project.members.some(m => m.userId === userId);
 
@@ -326,7 +363,6 @@ export class ProjectsService {
       throw new ForbiddenException('You do not have access to this project');
     }
 
-    // Get user's role
     const userRole = isOwner ? ProjectRole.OWNER : project.members.find(m => m.userId === userId)?.role;
 
     return {
@@ -335,13 +371,9 @@ export class ProjectsService {
     };
   }
 
-  /**
-   * Get statuses for a collaborative project (owner's statuses)
-   */
   async getProjectStatuses(userId: string, projectId: string) {
     const { project } = await this.getProjectAccess(userId, projectId);
 
-    // Get statuses scoped to this project + any statuses already used by its tasks (backward compatibility)
     const [projectStatuses, taskStatuses] = await Promise.all([
       this.prisma.status.findMany({
         where: { projectId },
@@ -388,9 +420,6 @@ export class ProjectsService {
     return Array.from(statusMap.values());
   }
 
-  /**
-   * Create a status for a collaborative project (owner's statuses)
-   */
   async createProjectStatus(userId: string, projectId: string, name: string) {
     const { project, role } = await this.getProjectAccess(userId, projectId);
 
@@ -421,9 +450,6 @@ export class ProjectsService {
     });
   }
 
-  /**
-   * Reorder statuses for a collaborative project
-   */
   async reorderProjectStatuses(userId: string, projectId: string, statusIds: string[]) {
     const { role } = await this.getProjectAccess(userId, projectId);
 
@@ -461,9 +487,6 @@ export class ProjectsService {
     return { success: true };
   }
 
-  /**
-   * Delete a status for a collaborative project (owner's statuses)
-   */
   async deleteProjectStatus(userId: string, projectId: string, statusId: string) {
     const { project, role } = await this.getProjectAccess(userId, projectId);
 
@@ -476,9 +499,6 @@ export class ProjectsService {
     });
   }
 
-  /**
-   * Update a collaborative project
-   */
   async updateCollaborativeProject(userId: string, projectId: string, dto: any) {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
@@ -501,9 +521,6 @@ export class ProjectsService {
     });
   }
 
-  /**
-   * Delete a collaborative project
-   */
   async deleteCollaborativeProject(userId: string, projectId: string) {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
@@ -513,7 +530,6 @@ export class ProjectsService {
       throw new ForbiddenException('Only project owner can delete project');
     }
 
-    // Delete all associated data
     await this.prisma.projectInvitation.deleteMany({
       where: { projectId },
     });

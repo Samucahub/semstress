@@ -1,6 +1,3 @@
--- Update existing projects based on whether they have members
--- Projects with members = collaborative
--- Projects without members = simple
 
 UPDATE "Project" 
 SET "isCollaborative" = true 

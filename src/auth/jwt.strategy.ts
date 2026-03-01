@@ -1,21 +1,45 @@
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../common/prisma/prisma.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(
+    private prisma: PrismaService,
+    configService: ConfigService,
+  ) {
+    const secret = configService.get<string>('JWT_SECRET');
+    if (!secret) {
+      throw new Error(
+        'FATAL: JWT_SECRET não está definido nas variáveis de ambiente.',
+      );
+    }
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: process.env.JWT_SECRET || 'your-secret-key',
+      secretOrKey: secret,
     });
   }
 
-  validate(payload: { sub: string; email: string; role: string }) {
+  async validate(payload: { sub: string; email: string; role: string }) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Sessão inválida. Utilizador não encontrado.');
+    }
+
     return {
-      id: payload.sub,
-      email: payload.email,
-      role: payload.role,
+      id: user.id,
+      email: user.email,
+      role: user.role,
     };
   }
 }

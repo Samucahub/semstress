@@ -3,39 +3,39 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 
-/**
- * Serviço para gerenciar refresh tokens
- * Permite renovação segura de access tokens
- */
 @Injectable()
 export class RefreshTokenService {
+  private readonly refreshTokenSecret: string;
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
     private configService: ConfigService,
-  ) {}
+  ) {
+    const secret = this.configService.get<string>('REFRESH_TOKEN_SECRET');
+    if (!secret) {
+      throw new Error(
+        'FATAL: REFRESH_TOKEN_SECRET não está definido nas variáveis de ambiente. ' +
+        'A aplicação não pode iniciar sem esta variável.',
+      );
+    }
+    this.refreshTokenSecret = secret;
+  }
 
-  /**
-   * Gera um novo refresh token para um utilizador
-   * @param userId ID do utilizador
-   * @returns Objeto com token e expiresAt
-   */
   async generateRefreshToken(userId: string) {
     const expiresInDays = this.configService.get('REFRESH_TOKEN_EXPIRY_DAYS', 30);
     const expiresAt = new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000);
 
-    // Gerar payload do JWT
     const payload = {
       sub: userId,
       type: 'refresh',
     };
 
     const token = this.jwtService.sign(payload, {
-      secret: this.configService.get('REFRESH_TOKEN_SECRET', 'default-refresh-secret'),
+      secret: this.refreshTokenSecret,
       expiresIn: `${expiresInDays}d`,
     });
 
-    // Armazenar refresh token na base de dados
     const refreshToken = await this.prisma.refreshToken.create({
       data: {
         token,
@@ -50,20 +50,13 @@ export class RefreshTokenService {
     };
   }
 
-  /**
-   * Valida um refresh token
-   * @param token Refresh token a validar
-   * @returns Dados do token ou null se inválido
-   */
   async validateRefreshToken(token: string) {
     try {
-      // Verificar se token existe na base de dados
       const refreshToken = await this.prisma.refreshToken.findUnique({
         where: { token },
         include: { user: true },
       });
 
-      // Validar que existe, não foi revogado, e não expirou
       if (
         !refreshToken ||
         refreshToken.revoked ||
@@ -72,13 +65,9 @@ export class RefreshTokenService {
         return null;
       }
 
-      // Verificar assinatura JWT
       try {
         this.jwtService.verify(token, {
-          secret: this.configService.get(
-            'REFRESH_TOKEN_SECRET',
-            'default-refresh-secret',
-          ),
+          secret: this.refreshTokenSecret,
         });
       } catch {
         return null;
@@ -90,10 +79,6 @@ export class RefreshTokenService {
     }
   }
 
-  /**
-   * Revoga um refresh token
-   * @param token Refresh token a revogar
-   */
   async revokeRefreshToken(token: string) {
     return await this.prisma.refreshToken.update({
       where: { token },
@@ -104,11 +89,6 @@ export class RefreshTokenService {
     });
   }
 
-  /**
-   * Revoga todos os refresh tokens de um utilizador
-   * Útil para logout em todos os dispositivos
-   * @param userId ID do utilizador
-   */
   async revokeAllUserTokens(userId: string) {
     return await this.prisma.refreshToken.updateMany({
       where: { userId, revoked: false },
@@ -119,10 +99,6 @@ export class RefreshTokenService {
     });
   }
 
-  /**
-   * Limpa refresh tokens expirados
-   * Executar periodicamente para manter a DB limpa
-   */
   async cleanupExpiredTokens() {
     const result = await this.prisma.refreshToken.deleteMany({
       where: {
@@ -137,24 +113,13 @@ export class RefreshTokenService {
     };
   }
 
-  /**
-   * Rotaciona um refresh token (segurança)
-   * Revoga o antigo e gera um novo
-   * @param oldToken Token antigo
-   * @param userId ID do utilizador
-   * @returns Novo refresh token
-   */
   async rotateRefreshToken(oldToken: string, userId: string) {
-    // Validar token antigo
     const refreshToken = await this.validateRefreshToken(oldToken);
     if (!refreshToken || refreshToken.userId !== userId) {
       return null;
     }
-
-    // Revogar token antigo
     await this.revokeRefreshToken(oldToken);
 
-    // Gerar novo token
     return this.generateRefreshToken(userId);
   }
 }

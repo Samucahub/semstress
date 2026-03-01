@@ -27,15 +27,13 @@ model User {
   name         String
   username     String       @unique
   email        String       @unique
-  password     String?      // Optional for OAuth users
+  password     String?      
   role         UserRole     @default(USER)
 
-  // Email verification for 2FA
   emailVerified Boolean      @default(false)
   verificationCode String?
   verificationCodeExpiresAt DateTime?
 
-  // OAuth providers
   googleId     String?      @unique
   githubId     String?      @unique
 
@@ -45,7 +43,6 @@ model User {
   projects     Project[]
   statuses     Status[]
   
-  // New: Collaborative projects
   projectMemberships ProjectMember[] @relation("ProjectMemberships")
   projectInvites     ProjectInvitation[]
   taskAssignments    TaskAssignee[]
@@ -53,6 +50,7 @@ model User {
   leadershipTransfersTo   ProjectLeadershipTransfer[] @relation("LeadershipTo")
   documents          Document[]       @relation("DocumentAuthor")
   refreshTokens      RefreshToken[]   @relation("UserRefreshTokens")
+  auditLogs          AuditLog[]       @relation("UserAuditLogs")
 
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
@@ -100,7 +98,6 @@ model Status {
   userId    String
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Optional: scope status to a specific collaborative project
   projectId String?
 
   tasks     Task[]
@@ -120,15 +117,14 @@ model Project {
   description String?
   color       String   @default("blue")
   order       Int      @default(0)
-  isCollaborative Boolean @default(false) // Differentiates between simple and collaborative projects
+  isCollaborative Boolean @default(false)
 
-  userId      String   // Creator/Owner
+  userId      String   
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  statusId    String?  // Optional - only required for simple projects
+  statusId    String?  
   status      Status?  @relation(fields: [statusId], references: [id])
 
-  // New: Members and invites for collaborative projects
   members     ProjectMember[]
   invites     ProjectInvitation[]
 
@@ -147,7 +143,7 @@ model Task {
   id          String       @id @default(uuid())
   title       String
   description String?
-  priority    TaskPriority? // Optional - only for collaborative tasks
+  priority    TaskPriority? 
   order       Int          @default(0)
   dueDate     DateTime?
   startDate   DateTime?
@@ -243,7 +239,7 @@ model ProjectInvitation {
   id        String   @id @default(uuid())
   email     String
   role      ProjectRole @default(VIEWER)
-  status    InvitationStatus @default(PENDING) // PENDING, ACCEPTED, DECLINED
+  status    InvitationStatus @default(PENDING)
 
   invitedById String
   invitedBy  User     @relation(fields: [invitedById], references: [id], onDelete: Cascade)
@@ -291,25 +287,22 @@ enum InvitationStatus {
 model Document {
   id          String   @id @default(uuid())
   title       String
-  content     String   @db.Text  // Markdown content
-  slug        String?  // For friendly URLs
+  content     String   @db.Text  
+  slug        String?  
   
-  // Optional relations (a document can be linked to only one thing)
   projectId      String?
   project        Project?     @relation(fields: [projectId], references: [id], onDelete: Cascade)
   
   taskId         String?
   task           Task?        @relation(fields: [taskId], references: [id], onDelete: Cascade)
   
-  // Author/Creator
   authorId    String
   author      User     @relation("DocumentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
   
-  // Metadata
-  isPublic    Boolean  @default(true)  // If other members can see
-  isPinned    Boolean  @default(false) // Highlight important documents
+  isPublic    Boolean  @default(true)
+  isPinned    Boolean  @default(false)
   
-  tags        String[] // For organization
+  tags        String[]
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -317,4 +310,26 @@ model Document {
   @@index([projectId])
   @@index([taskId])
   @@index([authorId])
+}
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation("UserAuditLogs", fields: [userId], references: [id], onDelete: Cascade)
+  
+  action    String   // CREATE_USER, UPDATE_USER, DELETE_USER, CREATE_TASK, UPDATE_TASK, DELETE_TASK, etc.
+  entityType String  // User, Task, TimeEntry, Project, etc.
+  entityId  String?  // ID da entidade afetada
+  
+  changes   Json?    // Mudanças realizadas (old values, new values)
+  details   String?  // Descrição adicional
+  
+  ipAddress String?
+  userAgent String?
+  
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+  @@index([createdAt])
+  @@index([action])
+  @@index([entityType])
 }

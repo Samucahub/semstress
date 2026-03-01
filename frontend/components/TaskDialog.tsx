@@ -67,7 +67,6 @@ export default function TaskDialog({
   const [showDocumentSelect, setShowDocumentSelect] = useState(false);
   const [loadingDocuments, setLoadingDocuments] = useState(false);
 
-  // Sincronizar documents com a prop task quando ela mudar
   useEffect(() => {
     if (mode === 'edit' && task?.id) {
       console.log('[TaskDialog] Loading task:', task?.id, 'Documents:', task?.documents);
@@ -75,7 +74,6 @@ export default function TaskDialog({
     }
   }, [mode, task?.id, task?.documents]);
 
-  // Carregar documentos disponíveis quando em modo de edição
   useEffect(() => {
     if (mode === 'edit' && task?.id) {
       loadAvailableDocuments();
@@ -86,7 +84,6 @@ export default function TaskDialog({
     try {
       setLoadingDocuments(true);
       const data = await apiFetch('/documents');
-      // Filtrar documentos que já não estão anexados
       const attached = documents.map(d => d.id);
       const available = data.filter((doc: Document) => !attached.includes(doc.id));
       setAvailableDocuments(available);
@@ -99,11 +96,9 @@ export default function TaskDialog({
 
   const handleAddDocument = async (docId: string) => {
     try {
-      // Encontrar o documento selecionado
       const selectedDoc = availableDocuments.find(d => d.id === docId);
       if (!selectedDoc) return;
 
-      // Atualizar documento para vincular a esta tarefa
       await apiFetch(`/documents/${docId}`, {
         method: 'PATCH',
         body: JSON.stringify({
@@ -111,7 +106,6 @@ export default function TaskDialog({
         }),
       });
 
-      // Adicionar à lista local
       setDocuments([
         ...documents,
         {
@@ -122,7 +116,6 @@ export default function TaskDialog({
         },
       ]);
 
-      // Remover das disponíveis
       setAvailableDocuments(availableDocuments.filter(d => d.id !== docId));
     } catch (err: any) {
       console.error('Erro ao adicionar documento:', err);
@@ -132,7 +125,6 @@ export default function TaskDialog({
 
   const handleRemoveDocument = async (docId: string) => {
     try {
-      // Desanexar documento
       await apiFetch(`/documents/${docId}`, {
         method: 'PATCH',
         body: JSON.stringify({
@@ -140,11 +132,9 @@ export default function TaskDialog({
         }),
       });
 
-      // Remover da lista local
       const removed = documents.find(d => d.id === docId);
       setDocuments(documents.filter(d => d.id !== docId));
 
-      // Adicionar de volta às disponíveis
       if (removed) {
         setAvailableDocuments([
           ...availableDocuments,
@@ -232,7 +222,6 @@ export default function TaskDialog({
             </select>
           </div>
 
-          {/* Seção de Documentos - Apenas em modo editar */}
           {mode === 'edit' && task?.id && (
             <div className="pt-4 border-t border-gray-200">
               <div className="flex items-center justify-between mb-4">
@@ -251,7 +240,6 @@ export default function TaskDialog({
                 )}
               </div>
 
-              {/* Documentos anexados */}
               {documents.length > 0 ? (
                 <div className="space-y-2 mb-4">
                   {documents.map((doc) => (
@@ -291,7 +279,6 @@ export default function TaskDialog({
                 <p className="text-sm text-gray-500 mb-4">Nenhum documento anexado</p>
               )}
 
-              {/* Seletor de documentos disponíveis */}
               {showDocumentSelect && availableDocuments.length > 0 && (
                 <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
                   <label className="block text-xs font-semibold text-gray-700 mb-2">

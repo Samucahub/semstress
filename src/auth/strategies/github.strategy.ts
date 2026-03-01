@@ -9,7 +9,6 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
     const clientID = configService.get('GITHUB_CLIENT_ID', '');
     const clientSecret = configService.get('GITHUB_CLIENT_SECRET', '');
 
-    // Always call super() with credentials (use dummy if not provided)
     super({
       clientID: clientID || 'dummy-id',
       clientSecret: clientSecret || 'dummy-secret',

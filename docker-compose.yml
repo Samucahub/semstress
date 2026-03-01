@@ -3,24 +3,24 @@ version: "3.9"
 services:
   postgres:
     image: postgres:15
-    container_name: semstress-postgres
+    container_name: cromometro-postgres
     restart: always
     environment:
-      POSTGRES_USER: semstress
-      POSTGRES_PASSWORD: semstress
-      POSTGRES_DB: semstress
+      POSTGRES_USER: cromometro
+      POSTGRES_PASSWORD: cromometro
+      POSTGRES_DB: cromometro
     ports:
       - "5432:5432"
     volumes:
-      - semstress_pgdata:/var/lib/postgresql/data
+      - cromometro_pgdata:/var/lib/postgresql/data
 
   mailhog:
     image: mailhog/mailhog:latest
-    container_name: semstress-mailhog
+    container_name: cromometro-mailhog
     restart: always
     ports:
       - "1025:1025"
       - "8025:8025"
 
 volumes:
-  semstress_pgdata:
+  cromometro_pgdata:
