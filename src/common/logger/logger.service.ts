@@ -7,7 +7,11 @@ export class CustomLoggerService implements LoggerService {
   private logger: winston.Logger;
 
   constructor() {
-    const logsDir = path.join(process.cwd(), 'logs');
+    // Use /tmp in production (Railway/cloud) where /app is read-only
+    const isProduction = process.env.NODE_ENV === 'production';
+    const logsDir = isProduction 
+      ? '/tmp/logs' 
+      : path.join(process.cwd(), 'logs');
 
     const logFormat = winston.format.combine(
       winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
@@ -16,7 +20,8 @@ export class CustomLoggerService implements LoggerService {
       winston.format.json(),
     );
 
-    const transports = [
+    // Console transport (always enabled)
+    const transports: winston.transport[] = [
       new winston.transports.Console({
         format: winston.format.combine(
           winston.format.colorize(),
@@ -27,51 +32,66 @@ export class CustomLoggerService implements LoggerService {
           }),
         ),
       }),
-
-      new winston.transports.File({
-        filename: path.join(logsDir, 'app.log'),
-        format: logFormat,
-        maxsize: 5242880,
-        maxFiles: 5,
-      }),
-
-      new winston.transports.File({
-        filename: path.join(logsDir, 'error.log'),
-        level: 'error',
-        format: logFormat,
-        maxsize: 5242880,
-        maxFiles: 5,
-      }),
-
-      new winston.transports.File({
-        filename: path.join(logsDir, 'auth.log'),
-        format: logFormat,
-        maxsize: 5242880,
-        maxFiles: 10,
-      }),
-
-      new winston.transports.File({
-        filename: path.join(logsDir, 'security.log'),
-        format: logFormat,
-        maxsize: 5242880,
-        maxFiles: 10,
-      }),
     ];
+
+    // File transports (only in dev or if explicitly enabled in production)
+    if (!isProduction || process.env.ENABLE_FILE_LOGS === 'true') {
+      transports.push(
+        new winston.transports.File({
+          filename: path.join(logsDir, 'app.log'),
+          format: logFormat,
+          maxsize: 5242880,
+          maxFiles: 5,
+        }),
+        new winston.transports.File({
+          filename: path.join(logsDir, 'error.log'),
+          level: 'error',
+          format: logFormat,
+          maxsize: 5242880,
+          maxFiles: 5,
+        }),
+        new winston.transports.File({
+          filename: path.join(logsDir, 'auth.log'),
+          format: logFormat,
+          maxsize: 5242880,
+          maxFiles: 10,
+        }),
+        new winston.transports.File({
+          filename: path.join(logsDir, 'security.log'),
+          format: logFormat,
+          maxsize: 5242880,
+          maxFiles: 10,
+        }),
+      );
+    }
+
+    const exceptionHandlers: winston.transport[] = [
+      new winston.transports.Console(),
+    ];
+    const rejectionHandlers: winston.transport[] = [
+      new winston.transports.Console(),
+    ];
+
+    // Add file handlers only in dev or if explicitly enabled
+    if (!isProduction || process.env.ENABLE_FILE_LOGS === 'true') {
+      exceptionHandlers.push(
+        new winston.transports.File({
+          filename: path.join(logsDir, 'exceptions.log'),
+        }),
+      );
+      rejectionHandlers.push(
+        new winston.transports.File({
+          filename: path.join(logsDir, 'rejections.log'),
+        }),
+      );
+    }
 
     this.logger = winston.createLogger({
       level: process.env.LOG_LEVEL || 'info',
       format: logFormat,
       transports,
-      exceptionHandlers: [
-        new winston.transports.File({
-          filename: path.join(logsDir, 'exceptions.log'),
-        }),
-      ],
-      rejectionHandlers: [
-        new winston.transports.File({
-          filename: path.join(logsDir, 'rejections.log'),
-        }),
-      ],
+      exceptionHandlers,
+      rejectionHandlers,
     });
   }
 
