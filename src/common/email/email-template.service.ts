@@ -35,7 +35,16 @@ export class EmailTemplateService {
   }
 
   private loadAllTemplates() {
-    const templatesDir = path.join(process.cwd(), 'src', 'common', 'email', 'templates');
+    const candidateDirs = [
+      path.join(process.cwd(), 'src', 'common', 'email', 'templates'),
+      path.join(process.cwd(), 'dist', 'common', 'email', 'templates'),
+    ];
+    const templatesDir = candidateDirs.find((dir) => fs.existsSync(dir));
+
+    if (!templatesDir) {
+      this.logger.error('Email templates directory not found in src/ or dist/.');
+      return;
+    }
 
     try {
       for (const templateType of Object.values(EmailTemplateType)) {

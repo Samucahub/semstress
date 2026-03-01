@@ -50,6 +50,7 @@ RUN npm ci --omit=dev && \
 
 # Copiar build
 COPY --from=builder /app/dist ./dist/
+COPY --from=builder /app/src/common/email/templates ./src/common/email/templates
 
 # Segurança: user não-root
 USER appuser
