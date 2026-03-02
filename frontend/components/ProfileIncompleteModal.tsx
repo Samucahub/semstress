@@ -73,16 +73,10 @@ export default function ProfileIncompleteModal({
         {/* Actions */}
         <div className="flex gap-3">
           <button
-            onClick={handleClose}
-            className="flex-1 px-4 py-2.5 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors duration-200"
-          >
-            Depois
-          </button>
-          <button
             onClick={handleNavigate}
-            className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20"
+            className="w-full px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20"
           >
-            Ir para Perfil
+            Completar Perfil Agora
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>

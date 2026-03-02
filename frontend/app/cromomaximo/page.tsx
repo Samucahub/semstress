@@ -342,7 +342,7 @@ export default function AdminPage() {
                             {new Date(u.createdAt).toLocaleDateString()}
                           </td>
                           <td className="py-3 px-4 text-right">
-                            {u.id !== currentUserId && u.status !== 'pending' ? (
+                            {u.id !== currentUserId ? (
                               <Button
                                 onClick={() => openDeleteConfirm(u.id, u.username)}
                                 className="bg-red-600 hover:bg-red-700 text-sm"
@@ -350,10 +350,8 @@ export default function AdminPage() {
                               >
                                 Remover
                               </Button>
-                            ) : u.id === currentUserId ? (
-                              <span className="text-xs text-gray-500 italic">Sua conta</span>
                             ) : (
-                              <span className="text-xs text-gray-400 italic">Pendente</span>
+                              <span className="text-xs text-gray-500 italic">Sua conta</span>
                             )}
                           </td>
                         </tr>
