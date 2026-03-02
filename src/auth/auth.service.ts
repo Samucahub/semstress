@@ -330,7 +330,14 @@ export class AuthService {
 
       const emailToSend = dto.email || pendingUser.email;
       if (emailToSend && !emailToSend.endsWith('@pending.local')) {
-        await this.emailService.sendVerificationEmail(emailToSend, verificationCode);
+        this.emailService.sendVerificationEmail(emailToSend, verificationCode)
+          .catch(err => {
+            this.logger.error(
+              `Failed to resend verification email to ${emailToSend}: ${err.message}`,
+              err.stack,
+              'AuthService',
+            );
+          });
       }
 
       return {
@@ -367,7 +374,14 @@ export class AuthService {
       },
     });
 
-    await this.emailService.sendVerificationEmail(user.email, verificationCode);
+    this.emailService.sendVerificationEmail(user.email, verificationCode)
+      .catch(err => {
+        this.logger.error(
+          `Failed to resend verification email to ${user.email}: ${err.message}`,
+          err.stack,
+          'AuthService',
+        );
+      });
 
     return {
       message: 'Novo código de verificação enviado para o teu email.',
