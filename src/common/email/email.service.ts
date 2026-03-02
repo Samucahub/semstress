@@ -1,79 +1,61 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
+import * as sgMail from '@sendgrid/mail';
 import { CustomLoggerService } from '../logger/logger.service';
 import { EmailTemplateService } from './email-template.service';
+
 @Injectable()
 export class EmailService {
-  private transporter: nodemailer.Transporter;
   private maxRetries = 3;
-  private retryDelay = 5000;
+  private retryDelay = 2000;
 
   constructor(
     private configService: ConfigService,
     private logger: CustomLoggerService,
     private templateService: EmailTemplateService,
   ) {
-    const mailSecure = `${this.configService.get('MAIL_SECURE', 'false')}`.toLowerCase() === 'true';
-
-    this.transporter = nodemailer.createTransport({
-      host: this.configService.get('MAIL_HOST', 'localhost'),
-      port: this.configService.get('MAIL_PORT', 1025),
-      secure: mailSecure,
-      auth: this.configService.get('MAIL_USER')
-        ? {
-            user: this.configService.get('MAIL_USER'),
-            pass: this.configService.get('MAIL_PASS'),
-          }
-        : undefined,
-    });
-
-    this.verifyTransporter();
-  }
-
-  private async verifyTransporter() {
-    try {
-      await this.transporter.verify();
-      this.logger.log('[Email Service] SMTP connection verified', 'EmailService');
-    } catch (error) {
+    const apiKey = this.configService.get('SENDGRID_API_KEY');
+    if (apiKey) {
+      sgMail.setApiKey(apiKey);
+      this.logger.log('[Email Service] SendGrid API configured', 'EmailService');
+    } else {
       this.logger.warn(
-        '[Email Service] SMTP connection failed, using fallback mode',
+        '[Email Service] SENDGRID_API_KEY not configured',
         'EmailService',
-        { error: error.message },
       );
     }
   }
 
   private async sendEmailWithRetry(
-    mailOptions: nodemailer.SendMailOptions,
+    msg: sgMail.MailDataRequired,
     attempt: number = 1,
   ): Promise<void> {
     try {
-      await this.transporter.sendMail(mailOptions);
+      await sgMail.send(msg);
       this.logger.log(
-        `Email sent successfully: ${mailOptions.to}`,
+        `Email sent successfully: ${msg.to}`,
         'EmailService',
         {
-          subject: mailOptions.subject,
-          recipient: mailOptions.to,
+          subject: msg.subject,
+          recipient: msg.to,
           attempt,
         },
       );
     } catch (error) {
       if (attempt < this.maxRetries) {
         this.logger.warn(
-          `Email send failed, retrying (attempt ${attempt}/${this.maxRetries}): ${mailOptions.to}`,
+          `Email send failed, retrying (attempt ${attempt}/${this.maxRetries}): ${msg.to}`,
           'EmailService',
-          { error: error.message, recipient: mailOptions.to },
+          { error: error.message, recipient: msg.to },
         );
         await this.delay(this.retryDelay);
-        return this.sendEmailWithRetry(mailOptions, attempt + 1);
+        return this.sendEmailWithRetry(msg, attempt + 1);
       } else {
         this.logger.error(
-          `Failed to send email after ${this.maxRetries} attempts: ${mailOptions.to}`,
+          `Failed to send email after ${this.maxRetries} attempts: ${msg.to}`,
           error.stack,
           'EmailService',
-          { recipient: mailOptions.to, subject: mailOptions.subject },
+          { recipient: msg.to, subject: msg.subject },
         );
         throw error;
       }
@@ -98,14 +80,14 @@ export class EmailService {
         verificationUrl,
       );
 
-      const mailOptions = {
-        from: this.configService.get('MAIL_FROM', 'noreply@cromometro.com'),
+      const msg: sgMail.MailDataRequired = {
         to: email,
+        from: this.configService.get('SENDGRID_FROM_EMAIL', 'noreply@cromometro.local'),
         subject: 'Verifique o seu Email - Cromometro',
         html,
       };
 
-      await this.sendEmailWithRetry(mailOptions);
+      await this.sendEmailWithRetry(msg);
     } catch (error) {
       this.logger.logSecurity('EMAIL_VERIFICATION_FAILED', 'verification_email', {
         recipient: email,
@@ -119,14 +101,14 @@ export class EmailService {
       const actionUrl = `${this.configService.get('APP_URL', 'http://localhost:3000')}/dashboard`;
       const html = this.templateService.renderWelcome(name, email, actionUrl);
 
-      const mailOptions = {
-        from: this.configService.get('MAIL_FROM', 'noreply@cromometro.com'),
+      const msg: sgMail.MailDataRequired = {
         to: email,
+        from: this.configService.get('SENDGRID_FROM_EMAIL', 'noreply@cromometro.local'),
         subject: 'Bem-vindo ao Cromometro!',
         html,
       };
 
-      await this.sendEmailWithRetry(mailOptions);
+      await this.sendEmailWithRetry(msg);
       this.logger.logAuth('WELCOME_EMAIL_SENT', email, { name });
     } catch (error) {
       this.logger.error(
@@ -151,14 +133,14 @@ export class EmailService {
         resetUrl,
       );
 
-      const mailOptions = {
-        from: this.configService.get('MAIL_FROM', 'noreply@cromometro.com'),
+      const msg: sgMail.MailDataRequired = {
         to: email,
+        from: this.configService.get('SENDGRID_FROM_EMAIL', 'noreply@cromometro.local'),
         subject: 'Redefinir Senha - Cromometro',
         html,
       };
 
-      await this.sendEmailWithRetry(mailOptions);
+      await this.sendEmailWithRetry(msg);
       this.logger.logSecurity('PASSWORD_RESET_EMAIL_SENT', 'password_reset', {
         recipient: email,
       });
@@ -180,14 +162,14 @@ export class EmailService {
     try {
       const html = this.templateService.renderTwoFA(name, email, code);
 
-      const mailOptions = {
-        from: this.configService.get('MAIL_FROM', 'noreply@cromometro.com'),
+      const msg: sgMail.MailDataRequired = {
         to: email,
+        from: this.configService.get('SENDGRID_FROM_EMAIL', 'noreply@cromometro.local'),
         subject: 'Código de Autenticação - Cromometro',
         html,
       };
 
-      await this.sendEmailWithRetry(mailOptions);
+      await this.sendEmailWithRetry(msg);
       this.logger.logSecurity('TWO_FA_EMAIL_SENT', '2fa', { recipient: email });
     } catch (error) {
       this.logger.error(
@@ -214,14 +196,14 @@ export class EmailService {
         confirmationUrl,
       );
 
-      const mailOptions = {
-        from: this.configService.get('MAIL_FROM', 'noreply@cromometro.com'),
+      const msg: sgMail.MailDataRequired = {
         to: email,
+        from: this.configService.get('SENDGRID_FROM_EMAIL', 'noreply@cromometro.local'),
         subject: 'Confirme a Mudança de Email - Cromometro',
         html,
       };
 
-      await this.sendEmailWithRetry(mailOptions);
+      await this.sendEmailWithRetry(msg);
       this.logger.logSecurity('EMAIL_CHANGE_CONFIRMATION_SENT', 'email_change', {
         oldEmail: email,
         newEmail,
