@@ -19,7 +19,7 @@ COPY prisma ./prisma/
 RUN npm ci
 
 # Copiar código fonte
-COPY tsconfig.json tsconfig.build.json nest-cli.json ./
+COPY tsconfig.json tsconfig.build.json ./
 COPY src ./src/
 
 # Gerar Prisma Client e compilar
