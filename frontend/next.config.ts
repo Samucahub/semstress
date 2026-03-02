@@ -1,11 +1,10 @@
 import type { NextConfig } from "next";
-import { resolve } from "path";
-import { fileURLToPath } from "url";
+import path from 'path';
 
 const nextConfig: NextConfig = {
-  output: 'standalone',
+  outputFileTracingRoot: path.join(__dirname),
   turbopack: {
-    root: resolve(fileURLToPath(import.meta.url), ".."),
+    root: path.join(__dirname),
   },
 };
 
